@@ -1,5 +1,6 @@
-package data;
+package model;
 
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.control.ScrollPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -16,33 +17,56 @@ import java.util.function.Consumer;
 
 import static javafx.scene.input.KeyCode.*;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
-import static util.StringUtils.encode;
-import static util.StringUtils.containsLineSeparator;
-import static util.StringUtils.isNullOrEmpty;
 
+/**
+ * <summary>Class is designed to look and, behave as a ConsolePane.</summary>
+ */
 public class ConsolePane extends BorderPane {
-    private final StyleClassedTextArea area = new StyleClassedTextArea();
-    private final List<String> history = new ArrayList<>();
-    private int historyPointer = 0;
-    private Consumer<String> onMessageReceivedHandler;
-    private Charset charset = StandardCharsets.UTF_8;
 
+    /**
+     * <summary>StyleClassedTextArea field.</summary>
+     */
+    private final StyleClassedTextArea area = new StyleClassedTextArea();
+
+    /**
+     * <summary>History field -- saves the commands that gets inputted into the console.</summary>
+     */
+    private final List<String> history = new ArrayList<>();
+
+    /**
+     * <summary>HistoryPointer field -- a pointer to keep track of which History element is the next one
+     * to be displayed. </summary>
+     */
+    private int historyPointer = 0;
+
+    /**
+     * <summary>The consumer to be accepted, following a key press of ENTER.</summary>
+     */
+    private Consumer<String> onMessageReceivedHandler;
+
+    /**
+     * Default Constructor.
+     * Initializes the relevant properties of this class and, overrides the proper keyEventListeners,
+     * and removes the undesired ones, to make it behave as a console.
+     */
     public ConsolePane() {
         VirtualizedScrollPane<StyleClassedTextArea> scrollPane = new VirtualizedScrollPane<>(area);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        area.setEditable(true);
-        area.setWrapText(false);
-        this.getStylesheets().add(getClass().getResource("/css/prompt.css").toExternalForm());
         setCenter(scrollPane);
+        area.setEditable(true);
+        area.setWrapText(true);
+        this.getStylesheets().add(getClass().getResource("/css/default.css").toExternalForm());
 
         Nodes.addInputMap(area, InputMap.consume(keyPressed(ENTER), e -> {
-            String text = area.getText(area.getCurrentParagraph());
+            final String text = new String(area.getText(area.getCurrentParagraph())
+                    .getBytes(StandardCharsets.UTF_8));
+
             if (!text.equals("")) {
-                history.add(text);
+                history.add(area.getText(area.getCurrentParagraph()));
                 historyPointer = history.size();
             }
             area.appendText(System.lineSeparator());
-            snapY();
+            scrollDown();
 
             if (onMessageReceivedHandler != null) {
                 onMessageReceivedHandler.accept(text);
@@ -99,77 +123,101 @@ public class ConsolePane extends BorderPane {
         Nodes.addInputMap(area, InputMap.ignore(mouseReleased()));
         Nodes.addInputMap(area, InputMap.ignore(mousePressed()));
         Nodes.addInputMap(area, InputMap.ignore(mouseDragged()));
+        Nodes.addInputMap(area, InputMap.ignore(keyPressed("A",
+                KeyCodeCombination.CONTROL_DOWN)));
+        Nodes.addInputMap(area, InputMap.ignore(keyPressed("Z",
+                KeyCodeCombination.CONTROL_DOWN)));
+        area.getUndoManager().close();
     }
 
-    public void setOnMessageReceivedHandler(final Consumer<String> onMessageReceivedHandler) {
-        this.onMessageReceivedHandler = onMessageReceivedHandler;
-    }
-
-    public void setEncoding(Charset charset) {
-        this.charset = charset;
-    }
-
-    public void println(String text, String style) {
+    /**
+     * <summary>Default println method.</summary>
+     * @param text a text to be print to the console.
+     */
+    public void println(String text) {
         GUIUtils.runSafe(() -> {
-            if (containsLineSeparator(text)) {
-                throw new IllegalArgumentException(
-                        "text may not contain any line separators."
-                );
-            }
-            area.appendText(encode(text, charset));
-            if (!isNullOrEmpty(style)) {
-                StyleFactory.create(text, style).forEach(s -> {
-                    area.setStyle(area.getCurrentParagraph(), s.getIndex().getStart(),
-                            s.getIndex().getEnd() + 1, s.getStyleClasses());
-                });
-            }
-            area.appendText(System.lineSeparator());
+            area.appendText(new String(text.getBytes(), StandardCharsets.UTF_8) + System.lineSeparator());
             area.clearStyle(area.getCurrentParagraph());
-            snapY();
+            scrollDown();
         });
     }
 
+    /**
+     * <summary>Styled println method.</summary>
+     * @param text a text to be print to the console.
+     * @param styleClasses a collection of css-classes, to be applied to the text.
+     */
     public void println(String text, Collection<String> styleClasses) {
         GUIUtils.runSafe(() -> {
             area.setStyle(area.getCurrentParagraph(), styleClasses);
-            area.appendText(encode(text, charset) + System.lineSeparator());
+            area.appendText(new String(text.getBytes(), Charset.defaultCharset()) + System.lineSeparator());
             area.clearStyle(area.getCurrentParagraph());
-            snapY();
+            scrollDown();
         });
     }
 
-    public void println(String text) {
+    /*
+    <note>Will be implemented in the future.</note>
+   public void println(String text, List<Style> styles) {
         GUIUtils.runSafe(() -> {
-            area.appendText(encode(text, charset) + System.lineSeparator());
+            int paragraphs = text.concat("\\s").split("\n").length;
+
+            area.appendText(new String(text.getBytes(), Charset.defaultCharset()));
+            for (Style style : styles) {
+                area.setStyle(area.getCurrentParagraph() - paragraphs + style.getIndex().getParagraph(),
+                        style.getIndex().getStart(),
+                        style.getIndex().getEnd(),
+                        style.getStyleClasses());
+            }
+            area.appendText(System.lineSeparator());
             area.clearStyle(area.getCurrentParagraph());
-            snapY();
+            scrollDown();
         });
     }
+    */
 
+    /**
+     * <summary>Default printerr method.</summary>
+     * @param text a text to be print to the console.
+     */
     public void printerr(String text) {
         GUIUtils.runSafe(() -> {
             area.setStyle(area.getCurrentParagraph(), Collections.singletonList("error"));
-            area.appendText(encode(text, charset) + System.lineSeparator());
+            area.appendText(new String(text.getBytes(), Charset.defaultCharset()) + System.lineSeparator());
             area.clearStyle(area.getCurrentParagraph());
-            snapY();
+            scrollDown();
         });
     }
 
+    /**
+     * <summary>Method for clearing the text-content of the console.</summary>
+     */
     public void clear() {
         GUIUtils.runSafe(area::clear);
     }
 
+    /**
+     * <summary>Method for clearing the underlying history list (of commands) of its content.</summary>
+     */
     public void clearHistory() {
         history.clear();
         historyPointer = 0;
     }
 
-    @Override
-    public void requestFocus() {
-        area.requestFocus();
+    /**
+     * <summary>SET method for this class's consumer.</summary>
+     * @param onMessageReceivedHandler a consumer to be assigned to this class's consumer field.
+     */
+    public void setOnMessageReceivedHandler(final Consumer<String> onMessageReceivedHandler) {
+        this.onMessageReceivedHandler = onMessageReceivedHandler;
     }
 
-    private void snapY() {
+    // internal calls to this method could be replaced by placing a listener on the area.textProperty().
+    /**
+     * <summary>Method for scrolling down the scrollPane, as much as possible</summary>
+     */
+    private void scrollDown() {
         area.scrollYBy(Double.MAX_VALUE);
     }
+
 }

@@ -1,8 +1,9 @@
-package data;
+package model;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
+/*
 class StyleFactory {
 
     static List<Style> create(String text, String from) {
@@ -145,3 +146,5 @@ class StyleFactory {
         return indices;
     }
 }
+
+*/

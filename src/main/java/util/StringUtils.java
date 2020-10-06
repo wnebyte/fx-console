@@ -1,18 +1,16 @@
 package util;
 
-import java.nio.charset.Charset;
-
 public class StringUtils {
+
+    private StringUtils() {
+        throw new UnsupportedOperationException();
+    }
 
     public static boolean isNullOrEmpty(String s) {
         return s == null || s.equals("");
     }
 
-    public static String encode(String s, Charset charset) {
-        return new String(s.getBytes(), charset);
-    }
-
     public static boolean containsLineSeparator(String s) {
-        return s.contains("\n");
+        return s.contains(System.lineSeparator());
     }
 }
