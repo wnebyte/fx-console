@@ -1,14 +1,22 @@
 package model;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Point2D;
+import javafx.scene.control.*;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.control.ScrollPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+import org.fxmisc.richtext.Caret;
 import org.fxmisc.richtext.StyleClassedTextArea;
 import org.fxmisc.richtext.model.TwoDimensional.Bias;
 import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 import util.GUIUtils;
+
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -19,38 +27,43 @@ import static javafx.scene.input.KeyCode.*;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
 
 /**
- * <summary>Class is designed to look and, behave as a ConsolePane.</summary>
+ * Class is designed to look and, behave as a console.
+ * The contents of this class is centered in its parent BorderPane.
+ * By default the /css/default.css file defines the visual appearance of this class.
  */
 public class ConsolePane extends BorderPane {
 
     /**
-     * <summary>StyleClassedTextArea field.</summary>
+     * The StyleClassedTextArea field.
      */
     private final StyleClassedTextArea area = new StyleClassedTextArea();
 
     /**
-     * <summary>History field -- saves the commands that gets inputted into the console.</summary>
+     * The VirtualizedScrollPane field.
+     */
+    private final VirtualizedScrollPane<StyleClassedTextArea> scrollPane =
+            new VirtualizedScrollPane<>(area);
+
+    /**
+     * The history field.
      */
     private final List<String> history = new ArrayList<>();
 
     /**
-     * <summary>HistoryPointer field -- a pointer to keep track of which History element is the next one
-     * to be displayed. </summary>
+     * The historyPointer field.
      */
     private int historyPointer = 0;
 
     /**
-     * <summary>The consumer to be accepted, following a key press of ENTER.</summary>
+     * The consumer field.
      */
     private Consumer<String> onMessageReceivedHandler;
 
     /**
-     * Default Constructor.
      * Initializes the relevant properties of this class and, overrides the proper keyEventListeners,
-     * and removes the undesired ones, to make it behave as a console.
+     * and removes the undesired ones, to make it look, and behave as a console.
      */
     public ConsolePane() {
-        VirtualizedScrollPane<StyleClassedTextArea> scrollPane = new VirtualizedScrollPane<>(area);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         setCenter(scrollPane);
         area.setEditable(true);
@@ -63,12 +76,14 @@ public class ConsolePane extends BorderPane {
 
             if (!text.equals("")) {
                 history.add(area.getText(area.getCurrentParagraph()));
-                historyPointer = history.size();
+                history.remove("");
+                history.add("");
+                historyPointer = history.size() - 1;
             }
             area.appendText(System.lineSeparator());
             scrollDown();
 
-            if (onMessageReceivedHandler != null) {
+            if (!text.equals("") && onMessageReceivedHandler != null) {
                 onMessageReceivedHandler.accept(text);
             }
         }));
@@ -119,20 +134,40 @@ public class ConsolePane extends BorderPane {
                     area.getParagraphLength(area.getCurrentParagraph()), history.get(historyPointer)));
         }));
 
+        Nodes.addInputMap(area, InputMap.consume(mousePressed(MouseButton.PRIMARY), e -> {
+            if (area.getContextMenu() != null) {
+                GUIUtils.runSafe(() -> area.getContextMenu().hide());
+            }
+        }));
+
+        Nodes.addInputMap(area, InputMap.consume(mousePressed(MouseButton.SECONDARY), e -> {
+            if (area.getContextMenu() != null) {
+                GUIUtils.runSafe(() -> area.getContextMenu().show(this, e.getScreenX(), e.getScreenY()));
+            }
+        }));
+
         Nodes.addInputMap(area, InputMap.ignore(mouseClicked()));
         Nodes.addInputMap(area, InputMap.ignore(mouseReleased()));
-        Nodes.addInputMap(area, InputMap.ignore(mousePressed()));
         Nodes.addInputMap(area, InputMap.ignore(mouseDragged()));
         Nodes.addInputMap(area, InputMap.ignore(keyPressed("A",
                 KeyCodeCombination.CONTROL_DOWN)));
         Nodes.addInputMap(area, InputMap.ignore(keyPressed("Z",
                 KeyCodeCombination.CONTROL_DOWN)));
         area.getUndoManager().close();
+
     }
 
     /**
-     * <summary>Default println method.</summary>
-     * @param text a text to be print to the console.
+     * Sets this class's consumer field.
+     * @param onMessageReceivedHandler a consumer to be assigned to this class's consumer field.
+     */
+    public void setOnMessageReceivedHandler(final Consumer<String> onMessageReceivedHandler) {
+        this.onMessageReceivedHandler = onMessageReceivedHandler;
+    }
+
+    /**
+     * Appends a text with default style to this class's text-editing area.
+     * @param text a text to be appended to this class's text-editing area.
      */
     public void println(String text) {
         GUIUtils.runSafe(() -> {
@@ -143,9 +178,9 @@ public class ConsolePane extends BorderPane {
     }
 
     /**
-     * <summary>Styled println method.</summary>
-     * @param text a text to be print to the console.
-     * @param styleClasses a collection of css-classes, to be applied to the text.
+     * Appends a text with the specified styles to this class's text-editing area.
+     * @param text a text to be appended to this class's text-editing area.
+     * @param styleClasses a collection of styles to be applied to the text.
      */
     public void println(String text, Collection<String> styleClasses) {
         GUIUtils.runSafe(() -> {
@@ -177,8 +212,8 @@ public class ConsolePane extends BorderPane {
     */
 
     /**
-     * <summary>Default printerr method.</summary>
-     * @param text a text to be print to the console.
+     * Appends a text with default error-style to this class's text-editing area.
+     * @param text a text to be appended to this class's text-editing area.
      */
     public void printerr(String text) {
         GUIUtils.runSafe(() -> {
@@ -190,14 +225,54 @@ public class ConsolePane extends BorderPane {
     }
 
     /**
-     * <summary>Method for clearing the text-content of the console.</summary>
+     * Clears all of the text from this class's text-editing area.
      */
     public void clear() {
         GUIUtils.runSafe(area::clear);
     }
 
     /**
-     * <summary>Method for clearing the underlying history list (of commands) of its content.</summary>
+     * Sets the editable property for this class's text-editing area.
+     * @param value new boolean value for this class's text-editing area's editable property.
+     */
+    public void setEditable(boolean value) {
+        GUIUtils.runSafe(() -> area.setEditable(value));
+    }
+
+    /**
+     * Sets the wrap text property for this class's text-editing area.
+     * @param value new boolean value for this class's text-editing area's wrap text property.
+     */
+    public void setWrapText(boolean value) {
+        GUIUtils.runSafe(() -> area.setWrapText(value));
+    }
+
+    /**
+     * Inserts the content of the clipboard into this class's text-editing area.
+     */
+    public void paste() {
+        GUIUtils.runSafe(area::paste);
+    }
+
+    /**
+     * Sets the v-scrollbar policy for this class's text-editing area.
+     * @param vBarPolicy a scrollbar policy to apply to this class's text-editing area's vertical scrollbar.
+     */
+    public void setVbarPolicy(ScrollPane.ScrollBarPolicy vBarPolicy) {
+        GUIUtils.runSafe(() -> scrollPane.setVbarPolicy(vBarPolicy));
+
+    }
+
+    /**
+     * Gets this class's text-editing area's v-scrollbar policy.
+     * @return this class's text-editing area's v-scrollbar policy.
+     */
+    public ScrollPane.ScrollBarPolicy getVbarPolicy() {
+        return scrollPane.getVbarPolicy();
+    }
+
+    /**
+     * Clears this class's history-list of its content.
      */
     public void clearHistory() {
         history.clear();
@@ -205,16 +280,23 @@ public class ConsolePane extends BorderPane {
     }
 
     /**
-     * <summary>SET method for this class's consumer.</summary>
-     * @param onMessageReceivedHandler a consumer to be assigned to this class's consumer field.
+     * Gets this class's context menu.
+     * @return this class's context menu. NULL by default.
      */
-    public void setOnMessageReceivedHandler(final Consumer<String> onMessageReceivedHandler) {
-        this.onMessageReceivedHandler = onMessageReceivedHandler;
+    public ContextMenu getContextMenu() {
+        return area.getContextMenu();
     }
 
-    // internal calls to this method could be replaced by placing a listener on the area.textProperty().
     /**
-     * <summary>Method for scrolling down the scrollPane, as much as possible</summary>
+     * Sets this class's context menu.
+     * @param contextMenu a context menu to be set to this class's context menu field.
+     */
+    public void setContextMenu(ContextMenu contextMenu) {
+        area.setContextMenu(contextMenu);
+    }
+
+    /**
+     * Scrolls the v-scrollbar all the way down.
      */
     private void scrollDown() {
         area.scrollYBy(Double.MAX_VALUE);
