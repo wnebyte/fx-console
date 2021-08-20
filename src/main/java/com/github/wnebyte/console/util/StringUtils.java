@@ -2,6 +2,7 @@ package com.github.wnebyte.console.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.regex.Pattern;
 
 /**
  * This class declares utility-methods for operating on Strings.
