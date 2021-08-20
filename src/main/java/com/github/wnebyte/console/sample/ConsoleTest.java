@@ -17,18 +17,16 @@ public class ConsoleTest extends Application {
 
     @Override
     public void start(Stage stage) {
-        Console console = new Console();
-        console.setPrefix(">>");
+        Console console = new Console(Console.Style.LINUX);
         console.setCallback(System.out::println);
-        console.println("com.github.wnebyte.console [Version 1.0.0]" + System.lineSeparator());
-        console.printprefix();
+        console.setPrefix(">>");
+        console.println("com.github.wnebyte.console [Version 1.0.0]")
+                .ln()
+                .ready();
         stage.setScene(new Scene(console));
         stage.setWidth(WIDTH);
         stage.setHeight(HEIGHT);
         stage.setTitle("Kommandotolken");
-
-        console.print("test").print(" test", "error").ln().printprefix();
-
         stage.show();
     }
 }
