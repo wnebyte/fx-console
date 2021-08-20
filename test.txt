@@ -1,7 +1,1 @@
-ö = [-61, -74], UTF_8 = [-10]
-
-area.getText():
-[-10]
-
-area.getText() (UTF_8)
-[63]
+ö

@@ -1,2 +1,8 @@
 rootProject.name = 'ConsolePane'
-
+/*
+"-Dfile.encoding=UTF-8"
+--module-path
+${PATH_TO_FX}
+--add-modules
+javafx.controls,javafx.base,javafx.graphics,javafx.fxml
+ */

@@ -16,7 +16,6 @@ task fatJar(type: Jar) {
         attributes 'Implementation-Title': 'ConsolePane-FatJar',
         'Implementation-Version': '1.0.0'
     }
-    baseName = project.name
     from { configurations.compile.collect {it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
@@ -28,7 +27,16 @@ sourceSets {
         }
         resources {
             srcDirs = ["src/main/resources"]
-            includes = ["**/*.css"]
+            includes = ["**/*.css", "**/*.txt"]
+        }
+    }
+    test {
+        java {
+            srcDirs = ["src/test/java"]
+        }
+        resources {
+            srcDirs = ["src/test/resources"]
+            includes = ["**/*.txt"]
         }
     }
 }
@@ -39,4 +47,5 @@ repositories {
 
 dependencies {
     implementation group: 'org.fxmisc.richtext', name: 'richtextfx', version: '0.10.1'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
 }

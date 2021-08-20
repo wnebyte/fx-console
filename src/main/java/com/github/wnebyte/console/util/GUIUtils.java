@@ -1,4 +1,4 @@
-package util;
+package com.github.wnebyte.console.util;
 
 import javafx.application.Platform;
 
