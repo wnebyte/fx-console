@@ -76,6 +76,10 @@
     -fx-fill: red;
 }
 
+.prefix {
+    -fx-fill: #ddd;
+}
+
 .context-menu {
     -fx-background-color: rgba(0, 0, 0, 0.4);
     -fx-text-fill: white;

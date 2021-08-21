@@ -2,6 +2,9 @@ package com.github.wnebyte.console.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class declares utility-methods for working on strings.
@@ -37,5 +40,41 @@ public final class StringUtils {
      */
     public static String removeLineSeparators(final String s) {
         return (s != null) ? s.replace(System.lineSeparator(), "").replace("\n", "") : "";
+    }
+
+    public static String replaceLineSeparator(final String s) {
+        return (s != null) ? s.replace("\r\n", "\n") : "";
+    }
+
+    /**
+     * Splits the specified string <code>s</code> using the regex <code>\r\n|\n</code>.
+     * @param s the string.
+     * @return the result.
+     */
+    public static List<String> split(final String s) {
+        return (s != null) ? Arrays.asList(s.split("\r\n|\n")) : new ArrayList<>();
+    }
+
+    public static List<String> toParagraphs(final String s) {
+        List<String> elements = new ArrayList<>();
+        if (s == null) { return elements; }
+        char[] arr = s.toCharArray();
+        int start = 0;
+
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == '\n') {
+                String substring = s.substring(start, i);
+                if (substring.length() != 0) {
+                    elements.add(substring);
+                }
+                elements.add("\n");
+                start = i + 1;
+            }
+        }
+        String substring = s.substring(start);
+        if (substring.length() != 0) {
+            elements.add(substring);
+        }
+        return elements;
     }
 }

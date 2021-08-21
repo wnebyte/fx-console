@@ -15,18 +15,30 @@ import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
 import static com.github.wnebyte.console.util.StringUtils.*;
 import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
 
+/**
+ * This class is a css-styleable FX Console.
+ */
 public class Console extends BorderPane {
 
-    public static final List<String> ERROR_STYLE = Collections.singletonList("error");
+    /**
+     * This enum represents predefined css resources.
+     */
+    public enum Style {
+        WIN,
+        LINUX
+    }
+
+    public static final String ERROR_STYLE = "error";
+
+    public static final String PREFIX_STYLE = "prefix";
+
+    public static final List<String> ERROR_STYLE_CLASSES = Collections.singletonList(ERROR_STYLE);
 
     private final StyleClassedTextArea area = new StyleClassedTextArea();
 
@@ -41,20 +53,20 @@ public class Console extends BorderPane {
 
     private String prefix;
 
+    private List<String> prefixStyleClasses = new ArrayList<>(){ { add(PREFIX_STYLE); } };
+
     public Console() {
         setCenter(scrollPane);
         area.setWrapText(true);
         area.setEditable(true);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        getStylesheets().add(getClass().getResource("/css/win.css").toExternalForm());
+        style(Style.WIN);
         build();
     }
 
     public Console(final Style style) {
         this();
-        String resource = (style == Style.WIN) ? "/css/win.css" : "/css/linux.css";
-        getStylesheets().clear();
-        getStylesheets().add(getClass().getResource(resource).toExternalForm());
+        style(style);
     }
 
     private void build() {
@@ -75,14 +87,19 @@ public class Console extends BorderPane {
         area.getUndoManager().close();
     }
 
+    private void style(final Style style) {
+        String resource = (style == Style.WIN) ? "/css/win.css" : "/css/linux.css";
+        getStylesheets().clear();
+        getStylesheets().add(getClass().getResource(resource).toExternalForm());
+    }
+
     private Consumer<? super KeyEvent> onEnter() {
         return new Consumer<>() {
             @Override
             public void accept(KeyEvent keyEvent) {
                 String text = area.getText(area.getCurrentParagraph());
                 text = (prefix != null && text.startsWith(prefix)) ? text.substring(prefix.length()) : text;
-                area.appendText(System.lineSeparator());
-                scrollToBottom();
+                ln();
 
                 if (nonEmpty(text)) {
                     history.add(text);
@@ -209,11 +226,17 @@ public class Console extends BorderPane {
      */
     public final Console print(final String text) {
         GUIUtils.runSafe(() -> {
-            String out = removeLineSeparators(text);
-            area.appendText(out);
-            int to = area.getText(area.getCurrentParagraph()).length();
-            int from = to - out.length();
-            area.clearStyle(area.getCurrentParagraph(), from, to);
+            toParagraphs(replaceLineSeparator(text)).forEach(out -> {
+                if (out.equals("\n")) {
+                    ln();
+                }
+                else {
+                    area.appendText(out);
+                    int to = area.getText(area.getCurrentParagraph()).length();
+                    int from = to - out.length();
+                    area.clearStyle(area.getCurrentParagraph(), from, to);
+                }
+            });
         });
         return this;
     }
@@ -227,11 +250,17 @@ public class Console extends BorderPane {
      */
     public final Console print(final String text, final String... styleClasses) {
         GUIUtils.runSafe(() -> {
-            String out = removeLineSeparators(text);
-            area.appendText(out);
-            int to = area.getText(area.getCurrentParagraph()).length();
-            int from = to - out.length();
-            area.setStyle(area.getCurrentParagraph(), from, to, Arrays.asList(styleClasses));
+            toParagraphs(replaceLineSeparator(text)).forEach(out -> {
+                if (out.equals("\n")) {
+                    ln();
+                }
+                else {
+                    area.appendText(out);
+                    int to = area.getText(area.getCurrentParagraph()).length();
+                    int from = to - out.length();
+                    area.setStyle(area.getCurrentParagraph(), from, to, Arrays.asList(styleClasses));
+                }
+            });
         });
         return this;
     }
@@ -244,9 +273,17 @@ public class Console extends BorderPane {
      */
     public final Console println(final String text) {
         GUIUtils.runSafe(() -> {
-            String out = removeLineSeparators(text);
-            area.appendText(out);
-            area.clearStyle(area.getCurrentParagraph());
+            toParagraphs(replaceLineSeparator(text)).forEach(out -> {
+                if (out.equals("\n")) {
+                    ln();
+                }
+                else {
+                    area.appendText(out);
+                    int to = area.getText(area.getCurrentParagraph()).length();
+                    int from = to - out.length();
+                    area.clearStyle(area.getCurrentParagraph(), from, to);
+                }
+            });
             ln();
         });
         return this;
@@ -261,11 +298,17 @@ public class Console extends BorderPane {
      */
     public final Console println(final String text, final String... styleClasses) {
         GUIUtils.runSafe(() -> {
-            String out = removeLineSeparators(text);
-            area.appendText(out);
-            int to = area.getText(area.getCurrentParagraph()).length();
-            int from = to - out.length();
-            area.setStyle(area.getCurrentParagraph(), from, to, Arrays.asList(styleClasses));
+            toParagraphs(replaceLineSeparator(text)).forEach(out -> {
+                if (out.equals("\n")) {
+                    ln();
+                }
+                else {
+                    area.appendText(out);
+                    int to = area.getText(area.getCurrentParagraph()).length();
+                    int from = to - out.length();
+                    area.setStyle(area.getCurrentParagraph(), from, to, Arrays.asList(styleClasses));
+                }
+            });
             ln();
         });
         return this;
@@ -273,17 +316,23 @@ public class Console extends BorderPane {
 
     /**
      * Prints the specified <code>text</code> and a new line to the console
-     * with {@linkplain Console#ERROR_STYLE} <code>styleClasses</code>.
+     * with {@linkplain Console#ERROR_STYLE_CLASSES} <code>styleClasses</code>.
      * @param text to be print.
      * @return this Console.
      */
     public final Console printerr(final String text) {
         GUIUtils.runSafe(() -> {
-            String out = removeLineSeparators(text);
-            area.appendText(out);
-            int to = area.getText(area.getCurrentParagraph()).length();
-            int from = to - out.length();
-            area.setStyle(area.getCurrentParagraph(), from, to, ERROR_STYLE);
+            toParagraphs(replaceLineSeparator(text)).forEach(out -> {
+                if (out.equals("\n")) {
+                    ln();
+                }
+                else {
+                    area.appendText(out);
+                    int to = area.getText(area.getCurrentParagraph()).length();
+                    int from = to - out.length();
+                    area.setStyle(area.getCurrentParagraph(), from, to, ERROR_STYLE_CLASSES);
+                }
+            });
             ln();
         });
         return this;
@@ -303,14 +352,14 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Prints the <code>prefix</code> to the console at the beginning of the current
-     * paragraph if a <code>prefix</code> has been specified, otherwise prints an empty string.
+     * Prints this console's <code>prefix</code> to the console at the beginning of the current
+     * paragraph if one has been specified.
      */
     public final void ready() {
         GUIUtils.runSafe(() -> {
             String text = (prefix != null) ? prefix : "";
             area.insertText(area.getCurrentParagraph(), 0, text);
-            area.clearStyle(area.getCurrentParagraph(), 0, text.length());
+            area.setStyle(area.getCurrentParagraph(), 0, text.length() - 1, prefixStyleClasses);
             scrollToBottom();
         });
     }
@@ -402,20 +451,20 @@ public class Console extends BorderPane {
         this.callback = callback;
     }
 
-    public final void setPrefix(final String prefix) {
+    public final void setPrefix(String prefix) {
         if (isNullOrEmpty(prefix)) {
             throw new IllegalArgumentException(
                     "Prefix may to be null or empty"
             );
         }
-        try {
-            Pattern pattern = Pattern.compile(prefix);
-        } catch (PatternSyntaxException e) {
-            throw new IllegalArgumentException(
-                 e.getMessage()
-            );
+        prefix = removeLineSeparators(prefix);
+        this.prefix = (prefix.endsWith("\\s")) ? prefix : prefix.concat(" ");
+    }
+
+    public final void setPrefixStyleClasses(final List<String> prefixStyleClasses) {
+        if ((prefixStyleClasses != null) && (prefixStyleClasses.size() != 0)) {
+            this.prefixStyleClasses = prefixStyleClasses;
         }
-        this.prefix = prefix;
     }
 
     /**
@@ -431,10 +480,5 @@ public class Console extends BorderPane {
      */
     private void scrollToBottom() {
         area.scrollYBy(Double.MAX_VALUE);
-    }
-
-    public enum Style {
-        WIN,
-        LINUX
     }
 }

@@ -75,3 +75,7 @@
     -fx-font-size: 13.5px;
     -fx-fill: red;
 }
+
+.prefix {
+    -fx-fill: green;
+}
