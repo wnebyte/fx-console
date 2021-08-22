@@ -2,7 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
-import static com.github.wnebyte.console.util.StringUtils.*;
+import static com.github.wnebyte.fxconsole.util.StringUtils.*;
 
 public class UtilsTest {
 
@@ -69,5 +69,20 @@ public class UtilsTest {
         s = "a";
         list = toParagraphs(s);
         Assert.assertEquals(1, list.size());
+    }
+
+    @Test
+    public void test05() {
+        String input = "wne *****";
+        String s = replaceSequence(input, "mypassword", '*');
+        Assert.assertEquals("wne mypassword", s);
+
+        input = "login wne *";
+        s = replaceSequence(input, "mypassword", '*');
+        Assert.assertEquals("login wne mypassword", s);
+
+        input = "login wne *";
+        s = replaceSequence(input, "mypassword", '*');
+        Assert.assertEquals("login wne mypassword", s);
     }
 }

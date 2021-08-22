@@ -54,8 +54,7 @@
 }
 
 .styled-text-area {
-    -fx-background-color: rgba(0, 0, 0, 0.96);
-  /*  -fx-padding: 0.25em 0.583em 0.583em 0.25em; */
+    -fx-background-color: rgb(12, 12, 12);
     -fx-padding: 0.05em 0.05em 0.05em 0.00em;
     -fx-cursor: text;
 }
@@ -66,8 +65,9 @@
 
 .text {
     -fx-font-family: "Consolas", "Monospaced";
-    -fx-font-size: 13.5px;
-    -fx-fill: #ddd;
+  /*  -fx-font-size: 13.5px; */
+    -fx-font-size: 16px;
+    -fx-fill: rgb(204, 204, 204);
 }
 
 .error {
@@ -77,7 +77,15 @@
 }
 
 .prefix {
-    -fx-fill: #ddd;
+    -fx-fill: rgb(204, 204, 204);
+}
+
+.green {
+    -fx-fill: green;
+}
+
+.purple {
+    -fx-fill: purple;
 }
 
 .context-menu {

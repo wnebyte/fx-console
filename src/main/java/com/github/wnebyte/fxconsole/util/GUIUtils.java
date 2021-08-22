@@ -1,10 +1,9 @@
-package com.github.wnebyte.console.util;
+package com.github.wnebyte.fxconsole.util;
 
 import javafx.application.Platform;
-
 import java.util.Objects;
 
-public class GUIUtils {
+public final class GUIUtils {
 
     private GUIUtils() {
         throw new UnsupportedOperationException();

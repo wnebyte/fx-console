@@ -1,4 +1,4 @@
-package com.github.wnebyte.console.util;
+package com.github.wnebyte.fxconsole.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -42,6 +42,11 @@ public final class StringUtils {
         return (s != null) ? s.replace(System.lineSeparator(), "").replace("\n", "") : "";
     }
 
+    /**
+     * Replaces <code>"\r\n"</code> with <code>"\n"</code>.
+     * @param s the string.
+     * @return the result.
+     */
     public static String replaceLineSeparator(final String s) {
         return (s != null) ? s.replace("\r\n", "\n") : "";
     }
@@ -76,5 +81,25 @@ public final class StringUtils {
             elements.add(substring);
         }
         return elements;
+    }
+
+    /*
+    login wne ************
+    **********************
+     */
+    public static String replaceSequence(final String s, final String replacement, final char c) {
+        char[] arr = s.toCharArray();
+        boolean match = false;
+
+        for (int i = arr.length - 1; i >= 0; i--) {
+            if (arr[i] == c) {
+                match = true;
+            } else {
+                if (match) {
+                    return s.substring(0, i + 1).concat(replacement);
+                }
+            }
+        }
+        return replacement;
     }
 }
