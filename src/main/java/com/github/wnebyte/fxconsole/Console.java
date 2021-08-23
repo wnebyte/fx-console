@@ -5,22 +5,30 @@ import com.github.wnebyte.fxconsole.util.GUIUtils;
 import com.github.wnebyte.fxconsole.util.StyledTextBuilder;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+import org.fxmisc.richtext.CharacterHit;
 import org.fxmisc.richtext.StyleClassedTextArea;
+import org.fxmisc.richtext.ViewActions;
 import org.fxmisc.richtext.model.PlainTextChange;
 import org.fxmisc.richtext.model.TwoDimensional;
+import org.fxmisc.wellbehaved.event.EventPattern;
 import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
+
+import java.net.URL;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import static com.github.wnebyte.fxconsole.util.StringUtils.*;
 import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
@@ -46,7 +54,7 @@ public class Console extends BorderPane {
 
     private static final char MASK = '*';
 
-    private static final String MASK_CMD = ":mask";
+    private static final String MASK_CMD = ":pw";
 
     private final Object lock = new Object();
 
@@ -55,6 +63,10 @@ public class Console extends BorderPane {
     private final VirtualizedScrollPane<StyleClassedTextArea> scrollPane =
             new VirtualizedScrollPane<>(area);
 
+    private final BooleanProperty noMask = new SimpleBooleanProperty(true);
+
+    private final LinkedList<Character> buffer = new LinkedList<>();
+
     private final List<String> history = new ArrayList<String>();
 
     private int historyPointer = 0;
@@ -62,10 +74,6 @@ public class Console extends BorderPane {
     private Consumer<String> callback;
 
     private StyledText prefix;
-
-    private final BooleanProperty ignoreMask = new SimpleBooleanProperty(true);
-
-    private final LinkedList<Character> buffer = new LinkedList<>();
 
     public Console() {
         this(Style.WIN);
@@ -80,47 +88,72 @@ public class Console extends BorderPane {
         build();
     }
 
+    /**
+     * Adds a new inputMap to be consumed.
+     */
+    public static <T extends javafx.event.Event, U extends T> void addConsumableInputMap(
+            final Console console,
+            final EventPattern<? super T, ? extends U> eventPattern,
+            final Consumer<? super U> action
+    ) {
+        if (console == null) { return; }
+        Nodes.addInputMap(console.area, InputMap.consume(eventPattern, action));
+    }
+
+    /**
+     * Adds a new inputMap to be ignored.
+     */
+    public static <T extends javafx.event.Event, U extends T> void addIgnorableInputMap(
+            final Console console,
+            final EventPattern<? super T, ? extends U> eventPattern
+    ) {
+        if (console == null) { return; }
+        Nodes.addInputMap(console.area, InputMap.ignore(eventPattern));
+    }
+
     private void build() {
-        Nodes.addInputMap(area, InputMap.consume(keyPressed(ENTER), onEnter()));
-        Nodes.addInputMap(area, InputMap.consume(keyPressed(BACK_SPACE), onBackSpace()));
-        Nodes.addInputMap(area, InputMap.consume(keyPressed(LEFT), onLeft()));
-        Nodes.addInputMap(area, InputMap.consume(keyPressed(RIGHT), onRight()));
-        Nodes.addInputMap(area, InputMap.consume(keyPressed(UP), onUp()));
-        Nodes.addInputMap(area, InputMap.consume(keyPressed(DOWN), onDown()));
-        Nodes.addInputMap(area, InputMap.consume(mousePressed(MouseButton.PRIMARY), onPrimary()));
-        Nodes.addInputMap(area, InputMap.consume(mousePressed(MouseButton.SECONDARY), onSecondary()));
-        Nodes.addInputMap(area, InputMap.ignore(mouseClicked()));
-        Nodes.addInputMap(area, InputMap.ignore(mouseReleased()));
-        Nodes.addInputMap(area, InputMap.ignore(mouseDragged()));
-        Nodes.addInputMap(area, InputMap.ignore(keyPressed("A", KeyCodeCombination.CONTROL_DOWN)));
-        Nodes.addInputMap(area, InputMap.ignore(keyPressed("Z", KeyCodeCombination.CONTROL_DOWN)));
-        Nodes.addInputMap(area, InputMap.ignore(keyPressed("V", KeyCodeCombination.CONTROL_DOWN)));
+        Console.addConsumableInputMap(this, keyPressed(ENTER), onEnterPressed());
+        Console.addConsumableInputMap(this, keyPressed(BACK_SPACE), onBackSpacePressed());
+        Console.addConsumableInputMap(this, keyPressed(LEFT), onLeftPressed());
+        Console.addConsumableInputMap(this, keyPressed(RIGHT), onRightPressed());
+        Console.addConsumableInputMap(this, keyPressed(UP), onUpPressed());
+        Console.addConsumableInputMap(this, keyPressed(DOWN), onDownPressed());
+        Console.addConsumableInputMap(this, mousePressed(MouseButton.PRIMARY), onPrimaryPressed());
+        Console.addConsumableInputMap(this, mousePressed(MouseButton.SECONDARY), onSecondaryPressed());
+        Console.addConsumableInputMap(this, keyPressed("V", KeyCodeCombination.CONTROL_DOWN), paste());
+        Console.addIgnorableInputMap (this, mouseClicked());
+        Console.addIgnorableInputMap (this, mouseReleased());
+        Console.addIgnorableInputMap (this, mouseDragged());
+        Console.addIgnorableInputMap (this, keyPressed("A", KeyCodeCombination.CONTROL_DOWN));
+        Console.addIgnorableInputMap (this, keyPressed("Z", KeyCodeCombination.CONTROL_DOWN));
         area.getUndoManager().close();
         area.multiPlainChanges()
                 .successionEnds(Duration.ofMillis(10))
-                .subscribe(del());
+                .subscribe(scan());
         area.multiPlainChanges()
-                .suppressWhen(ignoreMask)
+                .suppressWhen(noMask)
                 .subscribe(mask());
-
     }
-
+    
     private void style(final Style style) {
-        String resource = (style == Style.WIN) ? "/css/win.css" : "/css/linux.css";
-        getStylesheets().add(getClass().getResource(resource).toExternalForm());
+        String resourceName = (style == Style.WIN) ? "/css/win.css" : "/css/linux.css";
+        URL resource = getClass().getResource(resourceName);
+        if (resource != null) {
+            getStylesheets().add(resource.toExternalForm());
+        }
     }
 
     /**
      * Scans the tail of the text from the current paragraph for {@link Console#MASK_CMD} occurrence.
      */
-    private Consumer<List<PlainTextChange>> del() {
+    private Consumer<List<PlainTextChange>> scan() {
         return new Consumer<List<PlainTextChange>>() {
             @Override
             public void accept(List<PlainTextChange> plainTextChanges) {
                 String text = area.getText(area.getCurrentParagraph());
                 int len = text.length();
                 if (text.endsWith(MASK_CMD)) {
-                    ignoreMask.setValue(false);
+                    noMask.setValue(false);
                     area.deleteText(area.getCurrentParagraph(), Math.max(minMinor(), len - MASK_CMD.length()),
                             area.getCurrentParagraph(), len);
                 }
@@ -165,7 +198,7 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super KeyEvent> onEnter() {
+    private Consumer<? super KeyEvent> onEnterPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
@@ -184,7 +217,7 @@ public class Console extends BorderPane {
                     // clear buffer
                     buffer.clear();
                 }
-                ignoreMask.setValue(true);
+                noMask.setValue(true);
                 ln();
 
                 if (nonEmpty(text)) {
@@ -197,13 +230,14 @@ public class Console extends BorderPane {
                     if (callback != null) {
                         callback.accept(text);
                     }
+                } else {
+                    ready();
                 }
-                ready();
             }
         };
     }
 
-    private Consumer<? super KeyEvent> onBackSpace() {
+    private Consumer<? super KeyEvent> onBackSpacePressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
@@ -217,7 +251,7 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super KeyEvent> onLeft() {
+    private Consumer<? super KeyEvent> onLeftPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
@@ -233,7 +267,7 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super KeyEvent> onRight() {
+    private Consumer<? super KeyEvent> onRightPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
@@ -249,7 +283,7 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super KeyEvent> onUp() {
+    private Consumer<? super KeyEvent> onUpPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
@@ -266,7 +300,7 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super KeyEvent> onDown() {
+    private Consumer<? super KeyEvent> onDownPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
@@ -283,7 +317,7 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super MouseEvent> onPrimary() {
+    private Consumer<? super MouseEvent> onPrimaryPressed() {
         return new Consumer<MouseEvent>() {
             @Override
             public void accept(MouseEvent e) {
@@ -294,12 +328,27 @@ public class Console extends BorderPane {
         };
     }
 
-    private Consumer<? super MouseEvent> onSecondary() {
+    private Consumer<? super MouseEvent> onSecondaryPressed() {
         return new Consumer<MouseEvent>() {
             @Override
             public void accept(MouseEvent e) {
                 if (area.getContextMenu() != null) {
                     GUIUtils.runSafe(() -> area.getContextMenu().show(area, e.getScreenX(), e.getScreenY()));
+                }
+            }
+        };
+    }
+
+    private Consumer<KeyEvent> paste() {
+        return new Consumer<KeyEvent>() {
+            @Override
+            public void accept(KeyEvent keyEvent) {
+                Clipboard clipboard = Clipboard.getSystemClipboard();
+                if (clipboard.hasString()) {
+                    String s = clipboard.getString()
+                            .replace("\r\n", "")
+                            .replace("\n", "");
+                    print(s);
                 }
             }
         };

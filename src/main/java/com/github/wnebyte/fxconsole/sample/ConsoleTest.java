@@ -7,6 +7,8 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.util.function.Consumer;
+
 public class ConsoleTest extends Application {
 
     private static final double WIDTH = 895;
@@ -21,13 +23,26 @@ public class ConsoleTest extends Application {
     public void start(Stage stage) {
         Console console = new Console();
         console.setCallback(s -> {
-            if (s.equals("clear")) {
-                console.clear();
-            } else if (s.equals("exit")) {
-                System.exit(0);
-            }
-            System.out.println(s);
-            console.ln();
+            new Thread(() -> {
+                console.lock();
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (s.equals("clear")) {
+                    console.clear();
+                } else if (s.equals("clear -h")) {
+                    console.clearHistory();
+                    console.println("history cleared");
+                }
+                else {
+                    console.println("read: " + s);
+                }
+                console.ln();
+                console.unlock();
+                console.ready();
+            }).start();
         });
         console.println("com.github.wnebyte.console [Version 1.0.0]\n");
         StyledText styledText = new StyledTextBuilder()
@@ -48,5 +63,4 @@ public class ConsoleTest extends Application {
         stage.setTitle("Kommandotolken");
         stage.show();
     }
-
 }
