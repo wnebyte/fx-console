@@ -32,17 +32,10 @@ call console.ready() to print any specified prefix to the console,
 and unlock the console.<br/>
 
     import com.github.wnebyte.fxconsole.Console;
-    ...
-    foo() {
-        console.print("text", "css-cls0", "css-cls1");
-    }
-Prints "text" to the console and applies the two specified css-classes 
-to the appended text.<br/>
-    
-    import com.github.wnebyte.fxconsole.Console;
     import com.github.wnebyte.fxconsole.StyledText;
     ...
     foo() {
+        console.println("text", "css-cls0", "css-cls1");
         StyledText styledText = new StyledTextBuilder()
                 .append("foo", "css-cls0")
                 .whitespace()
@@ -50,13 +43,12 @@ to the appended text.<br/>
                 .ln()
                 .append("boo", "css-cls2")
                 .build();
-        console.print(styledText);
-        // or
-        console.setPrefix(styledText);        
+        console.println(styledText); 
     }
-Creates and prints a styledText object to the console, 
-and sets it as the console prefix.
-
+Prints "text" to the console and applies the two specified css-classes 
+to the appended text.<br/>
+Then creates and prints a styledText object to the console.
+ 
 ## Build
 
 ## Documentation
