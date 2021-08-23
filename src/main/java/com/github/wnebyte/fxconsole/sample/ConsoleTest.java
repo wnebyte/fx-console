@@ -24,7 +24,6 @@ public class ConsoleTest extends Application {
         Console console = new Console();
         console.setCallback(s -> {
             new Thread(() -> {
-                console.lock();
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -40,7 +39,6 @@ public class ConsoleTest extends Application {
                     console.println("read: " + s);
                 }
                 console.ln();
-                console.unlock();
                 console.ready();
             }).start();
         });
@@ -57,9 +55,7 @@ public class ConsoleTest extends Application {
         console.setPrefix(styledText);
         console.ready();
 
-        stage.setScene(new Scene(console));
-        stage.setWidth(WIDTH);
-        stage.setHeight(HEIGHT);
+        stage.setScene(new Scene(console, WIDTH, HEIGHT));
         stage.setTitle("Kommandotolken");
         stage.show();
     }

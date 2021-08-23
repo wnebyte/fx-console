@@ -4,6 +4,9 @@
 # Ignore Gradle build output directory
 build
 
+# Avoid ignoring java docs
+!build/docs
+
 # Ignore idea folder
 .idea
 

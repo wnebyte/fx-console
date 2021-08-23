@@ -5,30 +5,21 @@ import com.github.wnebyte.fxconsole.util.GUIUtils;
 import com.github.wnebyte.fxconsole.util.StyledTextBuilder;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.fxmisc.richtext.CharacterHit;
 import org.fxmisc.richtext.StyleClassedTextArea;
-import org.fxmisc.richtext.ViewActions;
 import org.fxmisc.richtext.model.PlainTextChange;
 import org.fxmisc.richtext.model.TwoDimensional;
 import org.fxmisc.wellbehaved.event.EventPattern;
 import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
-
 import java.net.URL;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import static com.github.wnebyte.fxconsole.util.StringUtils.*;
 import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
@@ -71,14 +62,28 @@ public class Console extends BorderPane {
 
     private int historyPointer = 0;
 
-    private Consumer<String> callback;
+    private Consumer<String> callback = new Consumer<String>() {
+        @Override
+        public void accept(String s) {
+            println("read: " + s);
+            ln();
+            ready();
+        }
+    };
 
     private StyledText prefix;
 
+    /**
+     * Constructs a new instance using the {@link Console.Style#WIN} <code>style</code>.
+     */
     public Console() {
         this(Style.WIN);
     }
 
+    /**
+     * Constructs a new instance using the specified <code>style</code>.
+     * @param style to be applied.
+     */
     public Console(final Style style) {
         setCenter(scrollPane);
         area.setWrapText(true);
@@ -88,9 +93,6 @@ public class Console extends BorderPane {
         build();
     }
 
-    /**
-     * Adds a new inputMap to be consumed.
-     */
     public static <T extends javafx.event.Event, U extends T> void addConsumableInputMap(
             final Console console,
             final EventPattern<? super T, ? extends U> eventPattern,
@@ -100,9 +102,6 @@ public class Console extends BorderPane {
         Nodes.addInputMap(console.area, InputMap.consume(eventPattern, action));
     }
 
-    /**
-     * Adds a new inputMap to be ignored.
-     */
     public static <T extends javafx.event.Event, U extends T> void addIgnorableInputMap(
             final Console console,
             final EventPattern<? super T, ? extends U> eventPattern
@@ -111,6 +110,9 @@ public class Console extends BorderPane {
         Nodes.addInputMap(console.area, InputMap.ignore(eventPattern));
     }
 
+    /**
+     * Builds the console.
+     */
     private void build() {
         Console.addConsumableInputMap(this, keyPressed(ENTER), onEnterPressed());
         Console.addConsumableInputMap(this, keyPressed(BACK_SPACE), onBackSpacePressed());
@@ -134,7 +136,11 @@ public class Console extends BorderPane {
                 .suppressWhen(noMask)
                 .subscribe(mask());
     }
-    
+
+    /**
+     * Applies the specified <code>style</code> resource on the class.
+     * @param style to be applied.
+     */
     private void style(final Style style) {
         String resourceName = (style == Style.WIN) ? "/css/win.css" : "/css/linux.css";
         URL resource = getClass().getResource(resourceName);
@@ -144,7 +150,9 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Scans the tail of the text from the current paragraph for {@link Console#MASK_CMD} occurrence.
+     * Scans the tail of the text from the current paragraph for {@link Console#MASK_CMD} occurrence,
+     * if found deletes the occurrence and sets the class scoped <code>noMask</code> property to <code>false</code>
+     * to init masking.
      */
     private Consumer<List<PlainTextChange>> scan() {
         return new Consumer<List<PlainTextChange>>() {
@@ -162,7 +170,8 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Replaces any appended text with the {@linkplain Console#MASK} char.
+     * Replaces any appended text with the {@linkplain Console#MASK} char,
+     * and pushes the appended text onto the class scoped buffer.
      */
     private Consumer<List<PlainTextChange>> mask() {
         return new Consumer<List<PlainTextChange>>() {
@@ -198,10 +207,14 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onEnterPressed.
+     */
     private Consumer<? super KeyEvent> onEnterPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
+                lock();
                 boolean buffered;
                 // get ln of text
                 String text = area.getText(area.getCurrentParagraph());
@@ -237,6 +250,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onBackSpacePressed.
+     */
     private Consumer<? super KeyEvent> onBackSpacePressed() {
         return new Consumer<KeyEvent>() {
             @Override
@@ -251,6 +267,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onLeftPressed.
+     */
     private Consumer<? super KeyEvent> onLeftPressed() {
         return new Consumer<KeyEvent>() {
             @Override
@@ -267,6 +286,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onRightPressed.
+     */
     private Consumer<? super KeyEvent> onRightPressed() {
         return new Consumer<KeyEvent>() {
             @Override
@@ -283,6 +305,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onUpPressed.
+     */
     private Consumer<? super KeyEvent> onUpPressed() {
         return new Consumer<KeyEvent>() {
             @Override
@@ -300,6 +325,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onDownPressed.
+     */
     private Consumer<? super KeyEvent> onDownPressed() {
         return new Consumer<KeyEvent>() {
             @Override
@@ -317,6 +345,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onPrimaryPressed.
+     */
     private Consumer<? super MouseEvent> onPrimaryPressed() {
         return new Consumer<MouseEvent>() {
             @Override
@@ -328,6 +359,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for onSecondaryPressed.
+     */
     private Consumer<? super MouseEvent> onSecondaryPressed() {
         return new Consumer<MouseEvent>() {
             @Override
@@ -339,6 +373,9 @@ public class Console extends BorderPane {
         };
     }
 
+    /**
+     * @return an EventHandler for paste.
+     */
     private Consumer<KeyEvent> paste() {
         return new Consumer<KeyEvent>() {
             @Override
@@ -482,7 +519,7 @@ public class Console extends BorderPane {
 
     /**
      * Prints this console's <code>prefix</code> to the console at the beginning of the current
-     * paragraph if one has been specified.
+     * paragraph if one has been specified, and unlocks the console.
      */
     // Todo: write an insert method
     public void ready() {
@@ -491,6 +528,7 @@ public class Console extends BorderPane {
                 if (prefix != null) {
                     print(prefix);
                 }
+                unlock();
             });
         }
     }
@@ -542,42 +580,63 @@ public class Console extends BorderPane {
         return area.isWrapText();
     }
 
+    /**
+     * Sets the vBarPolicy for this console's vertical ScrollPane.
+     * @param vBarPolicy to be set.
+     */
     public final void setVbarPolicy(final ScrollPane.ScrollBarPolicy vBarPolicy) {
         GUIUtils.runSafe(() -> scrollPane.setVbarPolicy(vBarPolicy));
 
     }
 
+    /**
+     * @return the vBarPolicy for this console's vertical ScrollPane.
+     */
     public final ScrollPane.ScrollBarPolicy getVbarPolicy() {
         return scrollPane.getVbarPolicy();
     }
 
+    /**
+     * Sets the hBarPolicy for this console's horizontal ScrollPane.
+     * @param hBarPolicy to be set.
+     */
     public final void setHBarPolicy(final ScrollPane.ScrollBarPolicy hBarPolicy) {
         GUIUtils.runSafe(() -> scrollPane.setHbarPolicy(hBarPolicy));
     }
 
+    /**
+     * @return returns the hBarPolicy for this console's ScrollPane.
+     */
     public final ScrollPane.ScrollBarPolicy getHbarPolicy() {
         return scrollPane.getHbarPolicy();
     }
 
     /**
-     * Clears the console's <code>history</code>.
+     * Clears this console's <code>history</code>.
      */
     public final void clearHistory() {
         history.clear();
         historyPointer = 0;
     }
 
+    /**
+     * Returns this console's ContextMenu.
+     * @return the ContextMenu, or <code>null</code> if not set.
+     */
     public final ContextMenu getContextMenu() {
         return area.getContextMenu();
     }
 
+    /**
+     * Sets the ContextMenu for this console
+     * @param contextMenu to be set.
+     */
     public final void setContextMenu(final ContextMenu contextMenu) {
         area.setContextMenu(contextMenu);
     }
 
     /**
-     * Specify the <code>Consumer{@literal <}String{@literal >}<String></code> to be called when
-     * new input has been appended to the console.
+     * Specify the Handler to be called when new input has been appended to the console.
      * @param callback to be set.
      */
     public final void setCallback(final Consumer<String> callback) {
