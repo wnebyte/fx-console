@@ -2,7 +2,7 @@ package com.github.wnebyte.fxconsole;
 
 import com.github.wnebyte.fxconsole.util.CollectionUtils;
 import com.github.wnebyte.fxconsole.util.GUIUtils;
-import com.github.wnebyte.fxconsole.util.StyledTextBuilder;
+import com.github.wnebyte.fxconsole.util.StylisedTextBuilder;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.control.ContextMenu;
@@ -62,16 +62,9 @@ public class Console extends BorderPane {
 
     private int historyPointer = 0;
 
-    private Consumer<String> callback = new Consumer<String>() {
-        @Override
-        public void accept(String s) {
-            println("read: " + s);
-            ln();
-            ready();
-        }
-    };
+    private Consumer<String> callback;
 
-    private StyledText prefix;
+    private StylisedText prefix;
 
     /**
      * Constructs a new instance using the {@link Console.Style#WIN} <code>style</code>.
@@ -150,71 +143,12 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Scans the tail of the text from the current paragraph for {@link Console#MASK_CMD} occurrence,
-     * if found deletes the occurrence and sets the class scoped <code>noMask</code> property to <code>false</code>
-     * to init masking.
-     */
-    private Consumer<List<PlainTextChange>> scan() {
-        return new Consumer<List<PlainTextChange>>() {
-            @Override
-            public void accept(List<PlainTextChange> plainTextChanges) {
-                String text = area.getText(area.getCurrentParagraph());
-                int len = text.length();
-                if (text.endsWith(MASK_CMD)) {
-                    noMask.setValue(false);
-                    area.deleteText(area.getCurrentParagraph(), Math.max(minMinor(), len - MASK_CMD.length()),
-                            area.getCurrentParagraph(), len);
-                }
-            }
-        };
-    }
-
-    /**
-     * Replaces any appended text with the {@linkplain Console#MASK} char,
-     * and pushes the appended text onto the class scoped buffer.
-     */
-    private Consumer<List<PlainTextChange>> mask() {
-        return new Consumer<List<PlainTextChange>>() {
-            @Override
-            public void accept(List<PlainTextChange> plainTextChanges) {
-                for (PlainTextChange plainTextChange : plainTextChanges) {
-                    String inserted = plainTextChange.getInserted();
-                    String removed = plainTextChange.getRemoved();
-
-                    if ((inserted.length() != 0) && (removed.length() != 0)) {
-                        continue;
-                    }
-                    if (0 < inserted.length()) {
-                        char[] arr = inserted.toCharArray();
-                        for (char c : arr) {
-                            buffer.add(c);
-                        }
-                        area.replaceText(
-                                plainTextChange.getPosition(),
-                                plainTextChange.getInsertionEnd(),
-                                String.valueOf(MASK)
-                        );
-                    }
-                    if (0 < removed.length()) {
-                        if (!(buffer.isEmpty())) {
-                            for (int i = 0; i < removed.length(); i++) {
-                                buffer.removeLast();
-                            }
-                        }
-                    }
-                }
-            }
-        };
-    }
-
-    /**
      * @return an EventHandler for onEnterPressed.
      */
     private Consumer<? super KeyEvent> onEnterPressed() {
         return new Consumer<KeyEvent>() {
             @Override
             public void accept(KeyEvent keyEvent) {
-                lock();
                 boolean buffered;
                 // get ln of text
                 String text = area.getText(area.getCurrentParagraph());
@@ -392,6 +326,64 @@ public class Console extends BorderPane {
     }
 
     /**
+     * Scans the tail of the text from the current paragraph for {@link Console#MASK_CMD} occurrence,
+     * if found deletes the occurrence and sets the class scoped <code>noMask</code> property to <code>false</code>
+     * to init masking.
+     */
+    private Consumer<List<PlainTextChange>> scan() {
+        return new Consumer<List<PlainTextChange>>() {
+            @Override
+            public void accept(List<PlainTextChange> plainTextChanges) {
+                String text = area.getText(area.getCurrentParagraph());
+                int len = text.length();
+                if (text.endsWith(MASK_CMD)) {
+                    noMask.setValue(false);
+                    area.deleteText(area.getCurrentParagraph(), Math.max(minMinor(), len - MASK_CMD.length()),
+                            area.getCurrentParagraph(), len);
+                }
+            }
+        };
+    }
+
+    /**
+     * Replaces any appended text with the {@linkplain Console#MASK} char,
+     * and pushes the appended text onto the class scoped buffer.
+     */
+    private Consumer<List<PlainTextChange>> mask() {
+        return new Consumer<List<PlainTextChange>>() {
+            @Override
+            public void accept(List<PlainTextChange> plainTextChanges) {
+                for (PlainTextChange plainTextChange : plainTextChanges) {
+                    String inserted = plainTextChange.getInserted();
+                    String removed = plainTextChange.getRemoved();
+
+                    if ((inserted.length() != 0) && (removed.length() != 0)) {
+                        continue;
+                    }
+                    if (0 < inserted.length()) {
+                        char[] arr = inserted.toCharArray();
+                        for (char c : arr) {
+                            buffer.add(c);
+                        }
+                        area.replaceText(
+                                plainTextChange.getPosition(),
+                                plainTextChange.getInsertionEnd(),
+                                String.valueOf(MASK)
+                        );
+                    }
+                    if (0 < removed.length()) {
+                        if (!(buffer.isEmpty())) {
+                            for (int i = 0; i < removed.length(); i++) {
+                                buffer.removeLast();
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    /**
      * Prints the specified <code>text</code> to the console at the current caret position
      * with default <code>styleClasses</code>.
      * @param text to be print.
@@ -439,13 +431,13 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Prints the specified <code>styledText</code> to the console at the current position.
-     * @param styledText the text and style to be print.
+     * Prints the specified <code>stylisedText</code> to the console at the current position.
+     * @param stylisedText the text and style to be print.
      */
-    public void print(final StyledText styledText) {
+    public void print(final StylisedText stylisedText) {
         synchronized (lock) {
             GUIUtils.runSafe(() -> {
-                styledText.getTextSequences().forEach(out -> {
+                stylisedText.getList().forEach(out -> {
                     print(out.getKey(), out.getValue().toArray(new String[0]));
                 });
             });
@@ -481,10 +473,10 @@ public class Console extends BorderPane {
         }
     }
 
-    public void println(final StyledText styledText) {
+    public void println(final StylisedText stylisedText) {
         synchronized (lock) {
             GUIUtils.runSafe(() -> {
-                print(styledText);
+                print(stylisedText);
                 ln();
             });
         }
@@ -643,14 +635,14 @@ public class Console extends BorderPane {
         this.callback = callback;
     }
 
-    public final void setPrefix(final StyledText prefix) {
-        if ((prefix == null) || (prefix.getTextSequences().isEmpty())) {
+    public final void setPrefix(final StylisedText prefix) {
+        if ((prefix == null) || (prefix.getList().isEmpty())) {
             throw new IllegalArgumentException(
                     "Prefix if specified may not be null"
             );
         }
         this.prefix = (prefix.getLast().getKey().endsWith("\\s")) ?
-                prefix : new StyledTextBuilder(prefix).whitespace().build();
+                prefix : new StylisedTextBuilder(prefix).whitespace().build();
     }
 
     /**

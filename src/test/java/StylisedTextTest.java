@@ -1,12 +1,12 @@
-import com.github.wnebyte.fxconsole.StyledText;
-import com.github.wnebyte.fxconsole.util.StyledTextBuilder;
+import com.github.wnebyte.fxconsole.StylisedText;
+import com.github.wnebyte.fxconsole.util.StylisedTextBuilder;
 import org.junit.Test;
 
-public class StyledTextTest {
+public class StylisedTextTest {
 
     @Test
     public void test00() {
-        StyledText styledText = new StyledTextBuilder()
+        StylisedText stylisedText = new StylisedTextBuilder()
                 .append("wne@MSI", "green")
                 .whitespace()
                 .append("MINGW64", "purple")

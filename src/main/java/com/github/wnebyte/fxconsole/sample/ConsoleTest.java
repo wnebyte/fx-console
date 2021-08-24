@@ -1,13 +1,11 @@
 package com.github.wnebyte.fxconsole.sample;
 
 import com.github.wnebyte.fxconsole.Console;
-import com.github.wnebyte.fxconsole.StyledText;
-import com.github.wnebyte.fxconsole.util.StyledTextBuilder;
+import com.github.wnebyte.fxconsole.StylisedText;
+import com.github.wnebyte.fxconsole.util.StylisedTextBuilder;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-import java.util.function.Consumer;
 
 public class ConsoleTest extends Application {
 
@@ -43,7 +41,7 @@ public class ConsoleTest extends Application {
             }).start();
         });
         console.println("com.github.wnebyte.console [Version 1.0.0]\n");
-        StyledText styledText = new StyledTextBuilder()
+        StylisedText stylisedText = new StylisedTextBuilder()
                 .append("wne@MSI", "green")
                 .whitespace()
                 .append("MINGW64", "purple")
@@ -52,7 +50,7 @@ public class ConsoleTest extends Application {
                 .ln()
                 .append("$", "text")
                 .build();
-        console.setPrefix(styledText);
+        console.setPrefix(stylisedText);
         console.ready();
 
         stage.setScene(new Scene(console, WIDTH, HEIGHT));
