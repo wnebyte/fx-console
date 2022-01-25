@@ -1,28 +1,28 @@
 package com.github.wnebyte.console;
 
-import com.github.wnebyte.console.util.CollectionUtils;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
+import java.util.*;
+import java.util.function.Consumer;
+import java.time.Duration;
 import javafx.scene.Node;
+import javafx.scene.input.*;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
-import org.fxmisc.flowless.VirtualizedScrollPane;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import org.fxmisc.wellbehaved.event.Nodes;
+import org.fxmisc.wellbehaved.event.InputMap;
+import org.fxmisc.wellbehaved.event.EventPattern;
 import org.fxmisc.richtext.StyleClassedTextArea;
 import org.fxmisc.richtext.model.PlainTextChange;
 import org.fxmisc.richtext.model.TwoDimensional;
-import org.fxmisc.wellbehaved.event.EventPattern;
-import org.fxmisc.wellbehaved.event.InputMap;
-import org.fxmisc.wellbehaved.event.Nodes;
-import java.time.Duration;
-import java.util.*;
-import java.util.function.Consumer;
-import static com.github.wnebyte.console.util.StringUtils.*;
+import org.fxmisc.flowless.VirtualizedScrollPane;
 import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
+import static com.github.wnebyte.console.util.StringUtils.*;
+import static com.github.wnebyte.console.util.CollectionUtils.toCharArray;
 import static com.github.wnebyte.console.util.GUIUtils.runSafe;
 
 /**
@@ -152,7 +152,7 @@ public class Console extends BorderPane {
 
         // if buffer has content
         if (hasBuffer = (buffer.size() > 0)) {
-            String bufferText = new String(CollectionUtils.toCharArray(buffer));
+            String bufferText = new String(toCharArray(buffer));
             // replace masked chars with contents of buffer
             text = replaceSequence(text, bufferText, MASK);
             // clear buffer
