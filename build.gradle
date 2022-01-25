@@ -2,7 +2,7 @@ import java.text.SimpleDateFormat
 
 plugins {
     id 'java-library'
-    id 'org.openjfx.javafxplugin' version '0.0.8'
+  //  id 'org.openjfx.javafxplugin' version '0.0.8'
     id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
 
@@ -13,10 +13,12 @@ version '0.0.1'
 sourceCompatibility = "1.8";
 targetCompatibility = "1.8";
 
+/*
 javafx {
     version = "11.0.2"
     modules = [ 'javafx.controls', 'javafx.base', 'javafx.graphics', 'javafx.fxml' ]
 }
+ */
 
 sourceSets {
     main {

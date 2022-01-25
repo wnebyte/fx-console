@@ -1,4 +1,4 @@
-package com.github.wnebyte.fxconsole.util;
+package com.github.wnebyte.console.util;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;

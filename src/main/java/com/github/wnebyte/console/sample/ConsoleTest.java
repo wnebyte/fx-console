@@ -1,8 +1,8 @@
-package com.github.wnebyte.fxconsole.sample;
+package com.github.wnebyte.console.sample;
 
-import com.github.wnebyte.fxconsole.Console;
-import com.github.wnebyte.fxconsole.StylisedText;
-import com.github.wnebyte.fxconsole.util.StylisedTextBuilder;
+import com.github.wnebyte.console.Console;
+import com.github.wnebyte.console.StyleText;
+import com.github.wnebyte.console.StyleTextBuilder;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -20,6 +20,7 @@ public class ConsoleTest extends Application {
     @Override
     public void start(Stage stage) {
         Console console = new Console();
+        console.getStylesheets().add(getClass().getResource("/css/win.css").toExternalForm());
         console.setCallback(s -> {
             new Thread(() -> {
                 try {
@@ -29,9 +30,6 @@ public class ConsoleTest extends Application {
                 }
                 if (s.equals("clear")) {
                     console.clear();
-                } else if (s.equals("clear -h")) {
-                    console.clearHistory();
-                    console.println("history cleared");
                 }
                 else {
                     console.println("read: " + s);
@@ -41,7 +39,15 @@ public class ConsoleTest extends Application {
             }).start();
         });
         console.println("com.github.wnebyte.console [Version 1.0.0]\n");
-        StylisedText stylisedText = new StylisedTextBuilder()
+        console.setPrefix(createPrefix());
+        console.ready();
+        stage.setScene(new Scene(console, WIDTH, HEIGHT));
+        stage.setTitle("Kommandotolken");
+        stage.show();
+    }
+
+    private StyleText createPrefix() {
+        return new StyleTextBuilder()
                 .append("wne@MSI", "green")
                 .whitespace()
                 .append("MINGW64", "purple")
@@ -50,11 +56,5 @@ public class ConsoleTest extends Application {
                 .ln()
                 .append("$", "text")
                 .build();
-        console.setPrefix(stylisedText);
-        console.ready();
-
-        stage.setScene(new Scene(console, WIDTH, HEIGHT));
-        stage.setTitle("Kommandotolken");
-        stage.show();
     }
 }

@@ -1,13 +1,10 @@
-package com.github.wnebyte.fxconsole.util;
+package com.github.wnebyte.console.util;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
- * This class declares utility-methods for working on strings.
+ * This class declares utility-methods for working with instances of {@link String}.
  */
 public final class StringUtils {
 
@@ -28,18 +25,15 @@ public final class StringUtils {
         return (s != null) && (s.contains(System.lineSeparator()));
     }
 
-    private static String encodeDecode(final String s) {
-        ByteBuffer buffer = Charset.defaultCharset().encode(s);
-        return Charset.defaultCharset().decode(buffer).toString();
-    }
-
     /**
      * Removes the occurrence of any <code>lineSeparator</code> characters from the specified string.
      * @param s the string.
      * @return the specified string not containing <code>"\r\n"</code> or <code>"\n"</code>.
      */
     public static String removeLineSeparators(final String s) {
-        return (s != null) ? s.replace(System.lineSeparator(), "").replace("\n", "") : "";
+        return (s != null) ?
+                s.replace(System.lineSeparator(), "").replace("\n", "")
+                : "";
     }
 
     /**
@@ -47,22 +41,14 @@ public final class StringUtils {
      * @param s the string.
      * @return the result.
      */
-    public static String replaceLineSeparator(final String s) {
+    static String normalizeString(final String s) {
         return (s != null) ? s.replace("\r\n", "\n") : "";
     }
 
-    /**
-     * Splits the specified string <code>s</code> using the regex <code>\r\n|\n</code>.
-     * @param s the string.
-     * @return the result.
-     */
-    public static List<String> split(final String s) {
-        return (s != null) ? Arrays.asList(s.split("\r\n|\n")) : new ArrayList<>();
-    }
-
-    public static List<String> toParagraphs(final String s) {
+    public static List<String> split(String s) {
         List<String> elements = new ArrayList<>();
         if (s == null) { return elements; }
+        s = normalizeString(s);
         char[] arr = s.toCharArray();
         int start = 0;
 
@@ -83,10 +69,6 @@ public final class StringUtils {
         return elements;
     }
 
-    /*
-    login wne ************
-    **********************
-     */
     public static String replaceSequence(final String s, final String replacement, final char c) {
         char[] arr = s.toCharArray();
         boolean match = false;
