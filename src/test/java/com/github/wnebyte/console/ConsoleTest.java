@@ -35,11 +35,11 @@ public class ConsoleTest extends Application {
                 console.ready();
             }).start();
         });
-        console.println("com.github.wnebyte.console [Version 1.0.0]\n");
-        console.setPrefix(createPrefix00());
+        console.setPrefix(createPrefix());
+        console.println("com.github.wnebyte.console [Version 0.0.1]\n");
         console.ready();
         stage.setScene(new Scene(console, WIDTH, HEIGHT));
-        stage.setTitle("Kommandotolken");
+        stage.setTitle("Terminal");
         stage.show();
     }
 

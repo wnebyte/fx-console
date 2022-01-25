@@ -440,13 +440,17 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Prints the <code>Prefix</code> at the current caret position and unlocks this <code>Console</code>.
+     * Prints the <code>Prefix</code> and unlocks this <code>Console</code>.
      */
-    // Todo: replace with insert
     public void ready() {
         synchronized (lock) {
             runSafe(() -> {
                 if (prefix != null) {
+                    int minor = area.offsetToPosition(area.getCaretPosition(), TwoDimensional.Bias.Backward)
+                            .getMinor();
+                    if (getMinMinor() < minor) {
+                        ln();
+                    }
                     print(prefix);
                 }
                 unlock();
