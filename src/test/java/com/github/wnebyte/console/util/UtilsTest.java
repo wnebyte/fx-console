@@ -1,3 +1,5 @@
+package com.github.wnebyte.console.util;
+
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.Arrays;

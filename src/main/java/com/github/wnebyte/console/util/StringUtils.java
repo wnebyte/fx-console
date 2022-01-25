@@ -41,7 +41,7 @@ public final class StringUtils {
      * @param s the string.
      * @return the result.
      */
-    static String normalizeString(final String s) {
+    public static String normalizeString(final String s) {
         return (s != null) ? s.replace("\r\n", "\n") : "";
     }
 

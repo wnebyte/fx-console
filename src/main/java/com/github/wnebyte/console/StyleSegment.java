@@ -1,6 +1,8 @@
 package com.github.wnebyte.console;
 
+import java.util.Collections;
 import java.util.List;
+import static com.github.wnebyte.console.util.StringUtils.normalizeString;
 
 public class StyleSegment {
 
@@ -9,7 +11,7 @@ public class StyleSegment {
     private final List<String> styleClasses;
 
     public StyleSegment(String text, List<String> styleClasses) {
-        this.text = text;
+        this.text = normalizeString(text);
         this.styleClasses = styleClasses;
     }
 
@@ -18,6 +20,6 @@ public class StyleSegment {
     }
 
     public List<String> getStyleClasses() {
-        return styleClasses;
+        return Collections.unmodifiableList(styleClasses);
     }
 }

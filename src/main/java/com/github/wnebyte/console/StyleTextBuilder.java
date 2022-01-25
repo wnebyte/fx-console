@@ -18,10 +18,9 @@ public class StyleTextBuilder {
     }
 
     public StyleTextBuilder append(String text, String... styleClasses) {
-        List<String> styleList = (styleClasses != null) ? Arrays.asList(styleClasses) : new ArrayList<>();
+        List<String> styleList = (styleClasses == null) ? Collections.emptyList() : Arrays.asList(styleClasses);
         StyleSegment styleSegment = new StyleSegment(text, styleList);
-        styleSegments.add(styleSegment);
-        return this;
+        return append(styleSegment);
     }
 
     public StyleTextBuilder append(StyleSegment styleSegment) {
@@ -30,36 +29,14 @@ public class StyleTextBuilder {
     }
 
     public StyleTextBuilder ln() {
-        if (styleSegments.isEmpty()) {
-            StyleSegment styleSegment = new StyleSegment("\n", Collections.emptyList());
-            styleSegments.add(styleSegment);
-        }
-        else {
-            int index = styleSegments.size() - 1;
-            StyleSegment styleSegment = styleSegments.get(index);
-            String text = styleSegment.getText();
-            List<String> styleClasses = styleSegment.getStyleClasses();
-            styleSegment = new StyleSegment(text.concat("\n"), styleClasses);
-            styleSegments.set(index, styleSegment);
-        }
-
+        StyleSegment styleSegment = new StyleSegment("\n", Collections.emptyList());
+        styleSegments.add(styleSegment);
         return this;
     }
 
     public StyleTextBuilder whitespace() {
-        if (styleSegments.isEmpty()) {
-            StyleSegment styleSegment = new StyleSegment(" ", Collections.emptyList());
-            styleSegments.add(styleSegment);
-        }
-        else {
-            int index = styleSegments.size() - 1;
-            StyleSegment styleSegment = styleSegments.get(index);
-            String text = styleSegment.getText();
-            List<String> styleClasses = styleSegment.getStyleClasses();
-            styleSegment = new StyleSegment(text.concat(" "), styleClasses);
-            styleSegments.set(index, styleSegment);
-        }
-
+        StyleSegment styleSegment = new StyleSegment(" ", Collections.emptyList());
+        styleSegments.add(styleSegment);
         return this;
     }
 

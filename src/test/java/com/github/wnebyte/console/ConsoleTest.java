@@ -1,8 +1,5 @@
-package com.github.wnebyte.console.sample;
+package com.github.wnebyte.console;
 
-import com.github.wnebyte.console.Console;
-import com.github.wnebyte.console.StyleText;
-import com.github.wnebyte.console.StyleTextBuilder;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -39,7 +36,7 @@ public class ConsoleTest extends Application {
             }).start();
         });
         console.println("com.github.wnebyte.console [Version 1.0.0]\n");
-        console.setPrefix(createPrefix());
+        console.setPrefix(createPrefix00());
         console.ready();
         stage.setScene(new Scene(console, WIDTH, HEIGHT));
         stage.setTitle("Kommandotolken");
@@ -55,6 +52,32 @@ public class ConsoleTest extends Application {
                 .append("~", "green")
                 .ln()
                 .append("$", "text")
+                .build();
+    }
+
+    private StyleText createPrefix00() {
+        return new StyleTextBuilder()
+                .build();
+    }
+
+    private StyleText createPrefix01() {
+        return new StyleTextBuilder()
+                .append("usr$", "purple")
+                .build();
+    }
+
+    private StyleText createPrefix02() {
+        return new StyleTextBuilder()
+                .append("wne@MSI ", "green")
+                .append("MINGW64 ", "purple")
+                .append("~\n", "green")
+                .append("$", "green")
+                .whitespace()
+                .build();
+    }
+
+    private StyleText createPrefix03() {
+        return new StyleTextBuilder()
                 .build();
     }
 }
