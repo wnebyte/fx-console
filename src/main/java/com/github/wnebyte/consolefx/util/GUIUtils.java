@@ -1,8 +1,11 @@
-package com.github.wnebyte.console.util;
+package com.github.wnebyte.consolefx.util;
 
-import javafx.application.Platform;
 import java.util.Objects;
+import javafx.application.Platform;
 
+/**
+ * This class declares utility-methods for working with <code>JavaFX</code> UI components.
+ */
 public final class GUIUtils {
 
     private GUIUtils() {

@@ -1,10 +1,10 @@
-package com.github.wnebyte.console.util;
+package com.github.wnebyte.consolefx.util;
 
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
-import static com.github.wnebyte.console.util.StringUtils.*;
+import static com.github.wnebyte.consolefx.util.StringUtils.*;
 
 public class UtilsTest {
 

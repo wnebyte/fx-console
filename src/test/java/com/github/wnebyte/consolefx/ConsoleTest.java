@@ -1,14 +1,18 @@
-package com.github.wnebyte.console;
+package com.github.wnebyte.consolefx;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
+import java.util.concurrent.*;
 
 public class ConsoleTest extends Application {
 
     private static final double WIDTH = 895;
 
     private static final double HEIGHT = 515;
+
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public static void main(String[] args) {
         launch();
@@ -18,18 +22,18 @@ public class ConsoleTest extends Application {
     public void start(Stage stage) {
         Console console = new Console();
         console.getStylesheets().add(getClass().getResource("/css/gitbash.css").toExternalForm());
-        console.setCallback(s -> {
-            new Thread(() -> {
-                if (s.equals("clear")) {
-                    console.clear();
-                }
-                else {
-                    console.println("read: " + s);
-                }
-                console.println();
-                console.ready();
-            }).start();
-        });
+        console.setCallback(s -> executor.submit(() -> {
+            if (s.equals("clear")) {
+                console.clear();
+            }
+            else if (s.equals("exit")) {
+                System.exit(0);
+            }
+            else {
+                console.out.println("read: " + s + "\n");
+            }
+            console.ready();
+        }));
         console.setPrefix(createPrefix());
         console.println("com.github.wnebyte.consolefx\n");
         console.ready();
@@ -84,4 +88,11 @@ public class ConsoleTest extends Application {
                 .append("$ ", "green")
                 .build();
     }
+
+    private StyleText createPrefix05() {
+        return new StyleTextBuilder()
+                .append("C:\\users\\user> ")
+                .build();
+    }
+
 }

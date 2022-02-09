@@ -1,4 +1,4 @@
-package com.github.wnebyte.console.util;
+package com.github.wnebyte.consolefx.util;
 
 import java.util.Arrays;
 import java.util.List;
@@ -92,12 +92,20 @@ public final class StringUtils {
         return elements;
     }
 
-    public static String replaceSequence(final String s, final String replacement, final char sequenceChar) {
+    /**
+     Replaces the last substring of the specified <code>s</code> that consists of an uninterrupted sequence of the specified
+     <code>c</code>, with the specified <code>replacement</code>.
+     * @param s the String.
+     * @param replacement the replacement String.
+     * @param c the sequence char.
+     * @return the result.
+     */
+    public static String replaceSequence(final String s, final String replacement, final char c) {
         char[] arr = s.toCharArray();
         boolean match = false;
 
         for (int i = arr.length - 1; i >= 0; i--) {
-            if (arr[i] == sequenceChar) {
+            if (arr[i] == c) {
                 match = true;
             } else {
                 if (match) {

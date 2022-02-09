@@ -1,4 +1,4 @@
-package com.github.wnebyte.console;
+package com.github.wnebyte.consolefx;
 
 import java.util.Arrays;
 import java.util.Collections;

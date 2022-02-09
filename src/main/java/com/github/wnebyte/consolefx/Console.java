@@ -1,10 +1,8 @@
-package com.github.wnebyte.console;
+package com.github.wnebyte.consolefx;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.time.Duration;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import javafx.scene.Node;
 import javafx.scene.input.*;
 import javafx.scene.control.ContextMenu;
@@ -23,9 +21,9 @@ import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
-import static com.github.wnebyte.console.util.StringUtils.*;
-import static com.github.wnebyte.console.util.CollectionUtils.toCharArray;
-import static com.github.wnebyte.console.util.GUIUtils.runSafe;
+import static com.github.wnebyte.consolefx.util.StringUtils.*;
+import static com.github.wnebyte.consolefx.util.GUIUtils.runSafe;
+import static com.github.wnebyte.consolefx.util.CollectionUtils.toCharArray;
 
 /**
  * This class represents a Java-FX Console that is styleable using CSS.
@@ -71,7 +69,7 @@ public class Console extends BorderPane {
 
     private static final char MASK = '*';
 
-    private static final String MASK_SEQUENCE = ":pw";
+    private static final String MASK_SEQUENCE = ":msk";
 
     private static final ScrollPane.ScrollBarPolicy DEFAULT_VERT_SCROLL_BAR_POLICY
             = ScrollPane.ScrollBarPolicy.ALWAYS;
@@ -118,12 +116,12 @@ public class Console extends BorderPane {
         this.buffer = new LinkedList<>();
         this.history = new LinkedList<>();
         this.historyPointer = 0;
-        this.out = new Printer();
+        this.out = new StandardPrinter();
         this.err = new ErrorPrinter();
-        super.setCenter(this.scrollPane);
         this.area.setWrapText(true);
         this.area.setEditable(true);
         this.scrollPane.setVbarPolicy(DEFAULT_VERT_SCROLL_BAR_POLICY);
+        super.setCenter(this.scrollPane);
         build();
     }
 
@@ -134,20 +132,20 @@ public class Console extends BorderPane {
     */
 
     private void build() {
-        Console.addConsumableInputMap(this.area, keyPressed(ENTER), this::onEnterPressed);
-        Console.addConsumableInputMap(this.area, keyPressed(BACK_SPACE), this::onBackSpacePressed);
-        Console.addConsumableInputMap(this.area, keyPressed(LEFT), this::onLeftPressed);
-        Console.addConsumableInputMap(this.area, keyPressed(RIGHT), this::onRightPressed);
-        Console.addConsumableInputMap(this.area, keyPressed(UP), this::onUpPressed);
-        Console.addConsumableInputMap(this.area, keyPressed(DOWN), this::onDownPressed);
-        Console.addConsumableInputMap(this.area, mousePressed(MouseButton.PRIMARY), this::onPrimaryClicked);
-        Console.addConsumableInputMap(this.area, mousePressed(MouseButton.SECONDARY), this::onSecondaryClicked);
-        Console.addConsumableInputMap(this.area, keyPressed("V", KeyCodeCombination.CONTROL_DOWN), this::paste);
-        Console.addIgnorableInputMap(this.area, mouseClicked());
-        Console.addIgnorableInputMap(this.area, mouseReleased());
-        Console.addIgnorableInputMap(this.area, mouseDragged());
-        Console.addIgnorableInputMap(this.area, keyPressed("A", KeyCodeCombination.CONTROL_DOWN));
-        Console.addIgnorableInputMap(this.area, keyPressed("Z", KeyCodeCombination.CONTROL_DOWN));
+        addConsumableInputMap(this.area, keyPressed(ENTER), this::onEnterPressed);
+        addConsumableInputMap(this.area, keyPressed(BACK_SPACE), this::onBackSpacePressed);
+        addConsumableInputMap(this.area, keyPressed(LEFT), this::onLeftPressed);
+        addConsumableInputMap(this.area, keyPressed(RIGHT), this::onRightPressed);
+        addConsumableInputMap(this.area, keyPressed(UP), this::onUpPressed);
+        addConsumableInputMap(this.area, keyPressed(DOWN), this::onDownPressed);
+        addConsumableInputMap(this.area, mousePressed(MouseButton.PRIMARY), this::onPrimaryClicked);
+        addConsumableInputMap(this.area, mousePressed(MouseButton.SECONDARY), this::onSecondaryClicked);
+        addConsumableInputMap(this.area, keyPressed("V", KeyCodeCombination.CONTROL_DOWN), this::paste);
+        addIgnorableInputMap(this.area, mouseClicked());
+        addIgnorableInputMap(this.area, mouseReleased());
+        addIgnorableInputMap(this.area, mouseDragged());
+        addIgnorableInputMap(this.area, keyPressed("A", KeyCodeCombination.CONTROL_DOWN));
+        addIgnorableInputMap(this.area, keyPressed("Z", KeyCodeCombination.CONTROL_DOWN));
         this.area.getUndoManager().close();
         this.area.multiPlainChanges()
                 .successionEnds(Duration.ofMillis(10))
@@ -187,18 +185,20 @@ public class Console extends BorderPane {
         println();
 
         if (!isNullOrEmpty(text)) {
+            // if text is non-null and non-empty
             if (!bufferNonEmpty) {
-                // add text to history if buffer was empty
+                // if buffer was empty add text to history
                 history.add(text);
                 history.remove("");
                 history.add("");
                 historyPointer = history.size() - 1;
             }
             if (callback != null) {
-                // callback with the appended text
+                // callback with the text
                 callback.accept(text);
             }
         } else {
+            // print prefix & unlock console
             ready();
         }
     }
@@ -241,8 +241,13 @@ public class Console extends BorderPane {
         }
         historyPointer--;
         runSafe(() -> {
-            area.replaceText(area.getCurrentParagraph(), getMinMinor(), area.getCurrentParagraph(),
-                    area.getParagraphLength(area.getCurrentParagraph()), history.get(historyPointer));
+            area.replaceText(
+                    area.getCurrentParagraph(),
+                    getMinMinor(),
+                    area.getCurrentParagraph(),
+                    area.getParagraphLength(area.getCurrentParagraph()),
+                    history.get(historyPointer)
+            );
         });
     }
 
@@ -253,8 +258,13 @@ public class Console extends BorderPane {
         }
         historyPointer++;
         runSafe(() -> {
-            area.replaceText(area.getCurrentParagraph(), getMinMinor(), area.getCurrentParagraph(),
-                    area.getParagraphLength(area.getCurrentParagraph()), history.get(historyPointer));
+            area.replaceText(
+                    area.getCurrentParagraph(),
+                    getMinMinor(),
+                    area.getCurrentParagraph(),
+                    area.getParagraphLength(area.getCurrentParagraph()),
+                    history.get(historyPointer)
+            );
         });
     }
 
@@ -478,6 +488,10 @@ public class Console extends BorderPane {
         }
     }
 
+    public String getText() {
+        return removePrefix(area.getText(area.getCurrentParagraph()));
+    }
+
     /**
      * Clears any text from this <code>Console</code>.
      */
@@ -485,6 +499,14 @@ public class Console extends BorderPane {
         synchronized (lock) {
             runSafe(area::clear);
         }
+    }
+
+    /**
+     * Clears the contents of the history.
+     */
+    public final void clearHistory() {
+        history.clear();
+        historyPointer = 0;
     }
 
     /**
@@ -511,7 +533,7 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Specify whether the text should wrap or not.
+     * Set whether the displayed text should wrap or not.
      * @param value whether the text should wrap.
      */
     public final void setWrapText(final boolean value) {
@@ -519,7 +541,7 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Returns whether the text is set to wrap or not,
+     * Returns whether the displayed text is set to wrap or not,
      * @return <code>true</code> if the text is set to wrap,
      * otherwise <code>false</code>.
      */
@@ -528,8 +550,8 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Specify the vBarPolicy for this console's vertical ScrollPane.
-     * @param vBarPolicy to be set.
+     * Set a <code>vBarPolicy</code> for the vertical <code>ScrollPane</code>.
+     * @param vBarPolicy to be used.
      */
     public final void setVbarPolicy(final ScrollPane.ScrollBarPolicy vBarPolicy) {
         runSafe(() -> scrollPane.setVbarPolicy(vBarPolicy));
@@ -558,32 +580,28 @@ public class Console extends BorderPane {
         return scrollPane.getHbarPolicy();
     }
 
-    /**
-     * Clears this console's <code>history</code>.
-     */
-    public final void clearHistory() {
-        history.clear();
-        historyPointer = 0;
-    }
 
     /**
-     * Returns this console's ContextMenu.
-     *
-     * @return the ContextMenu, or <code>null</code> if not set.
+     * Returns the <code>ContextMenu</code> of this <code>Console</code>.
+     * @return the <code>ContextMenu</code> if one exists,
+     * otherwise <code>null</code>.
      */
     public final ContextMenu getContextMenu() {
         return area.getContextMenu();
     }
 
     /**
-     * Sets this Console's ContextMenu.
-     *
-     * @param contextMenu to be set.
+     * Set a <code>ContextMenu</code> to be used by this <code>Console</code>.
+     * @param contextMenu to be used.
      */
     public final void setContextMenu(final ContextMenu contextMenu) {
         area.setContextMenu(contextMenu);
     }
 
+    /**
+     * Set a callback to be invoked when this <code>Console</code> has new text appended to it.
+     * @param callback to be used.
+     */
     public final void setCallback(final Consumer<String> callback) {
         this.callback = callback;
     }
@@ -600,6 +618,7 @@ public class Console extends BorderPane {
     }
 
     /**
+     * Returns the minimum column position for the current paragraph.
      * @return the minimum column position for the current paragraph (inclusive).
      */
     private int getMinMinor() {
@@ -622,21 +641,7 @@ public class Console extends BorderPane {
     /*
     has to override all print methods.
      */
-    public class Printer extends PrintStream {
-
-        public Printer() {
-            super(new OutputStream() {
-                /**
-                 * @throws UnsupportedOperationException if called.
-                 */
-                @Override
-                public void write(int b) {
-                    throw new UnsupportedOperationException(
-                            "This OutputStream cannot be written to."
-                    );
-                }
-            });
-        }
+    public class StandardPrinter extends Printer {
 
         @Override
         public void print(boolean b) {
@@ -803,156 +808,6 @@ public class Console extends BorderPane {
         @Override
         public void println() {
             Console.this.println();
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream append(char c) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream append(CharSequence csq) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream append(CharSequence csq, int start, int end) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public boolean checkError() {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void clearError() {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void setError() {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void close() {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void flush() {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void write(int i) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void write(byte[] buf, int off, int len) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public void write(byte[] b) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream printf(String format, Object... args) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream printf(Locale l, String format, Object... args) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream format(String format, Object... args) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
-        }
-
-        /**
-         * @throws UnsupportedOperationException if called.
-         */
-        @Override
-        public PrintStream format(Locale l, String format, Object... args) {
-            throw new UnsupportedOperationException(
-                    ""
-            );
         }
     }
 

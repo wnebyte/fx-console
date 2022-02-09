@@ -1,7 +1,10 @@
-package com.github.wnebyte.console.util;
+package com.github.wnebyte.consolefx.util;
 
 import java.util.Collection;
 
+/**
+ * This class declares utility-methods for working with instances of {@link Collection}.
+ */
 public final class CollectionUtils {
 
     public static char[] toCharArray(final Collection<Character> c) {

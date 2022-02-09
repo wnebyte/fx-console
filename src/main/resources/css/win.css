@@ -1,0 +1,94 @@
+/* variable declarations */
+* {
+
+}
+
+/* style declaration for the scroll-pane */
+.virtualized-scroll-pane {
+    -fx-background-color: null;
+    -fx-padding: 0;
+    -fx-cursor: default;
+}
+
+.virtualized-scroll-pane > .scroll-bar:horizontal {
+    -fx-background-radius: 0 0 2 2;
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical {
+    -fx-background-radius: 0 2 2 0;
+    -fx-pref-width: 16.5;
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical .increment-button,
+.virtualized-scroll-pane > .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-border-color: derive(gray, 80%);
+    -fx-background-radius: 0em;
+    -fx-padding: 5px;
+}
+
+.virtualized-scroll-pane >. scroll-bar:vertical .increment-button:pressed,
+.virtualized-scroll-pane >. scroll-bar:vertical .decrement-button:pressed {
+    -fx-background-color: derive(black, 70%);
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical > .increment-arrow,
+.virtualized-scroll-pane > .scroll-bar:vertical > .decrement-arrow {
+    -fx-background-color: black;
+    -fx-mark-highlight-color: black;
+}
+
+.vertical-scroll-pane > .scroll-bar:vertical > .increment-arrow:pressed,
+.vertical-scroll-pane > .scroll-bar:vertical > .decrement-arrow:pressed {
+    -fx-background-color: white;
+    -fx-mark-highlight-color: white;
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical .thumb {
+    -fx-background-color: derive(black, 99%);
+    -fx-background-insets: 1.5, 1.5, 1.5;
+    -fx-background-radius: 0em;
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical .thumb:pressed {
+    -fx-background-color: derive(black, 60%);
+}
+
+.virtualized-scroll-pane > .corner {
+    -fx-background-radius: 0 0 2 0;
+}
+
+/* style declaration for text editor area */
+.styled-text-area {
+    -fx-background-color: rgb(12, 12, 12);
+    -fx-padding: 0.05em 0.05em 0.05em 0.00em;
+    -fx-cursor: text;
+}
+
+/* style declaration for the caret */
+.caret {
+    -fx-stroke: white;
+}
+
+/* style declaration for the default text */
+.text {
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 17px;
+    -fx-fill: rgb(204, 204, 204);
+}
+
+/* style declaration for the default error text */
+.error {
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 17px;
+    -fx-fill: red;
+}
+
+/* style declaration for the context menu */
+.context-menu {
+    -fx-background-color: rgba(0, 0, 0, 0.4);
+    -fx-text-fill: white;
+    -fx-background-insets: 0, 1, 2;
+    -fx-background-radius: 0 6 6 6, 0 5 5 5, 0 4 4 4;
+    -fx-padding: 0.333333em 0.083333em 0.666667em 0.083333em; /* 4 1 8 1 */
+}

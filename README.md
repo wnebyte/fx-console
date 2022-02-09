@@ -10,13 +10,13 @@ javafx-library
 - [Licence](#licence)
 
 ## About
-This project contains a javafx class which  is made to look and behave like a standard console. 
-Both the console itself, and any text that is appended to it can be styled using css.
+This project contains a javafx class which  is made to look and behave like a standard console.<br> 
+Both the console itself, and any text appended to it can be styled using css.
 
 
 ## Sample
 ### #1
-This sample demonstrates the initialization of a console that has no styles applied, no prefix, 
+This sample demonstrates the initialization of a console that has no styles applied, no prefix,<br> 
 and echoes all input.
 
     class Sample extends Application {
@@ -27,6 +27,7 @@ and echoes all input.
                 console.ready();
             });
             stage.setScene(new Scene(console, 895, 515));
+            console.println("com.github.wnebyte.consolefx\n");
             console.ready();
             stage.show();
         }
@@ -34,8 +35,11 @@ and echoes all input.
     
  
 ## Images
-![image](images/image1.png)
+### /css/gitbash.css
+![image1](images/image1.png)
 
+### /css/win.css
+![image2](images/image2.png)
 
 ## Build
 

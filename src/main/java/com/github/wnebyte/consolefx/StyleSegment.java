@@ -1,8 +1,8 @@
-package com.github.wnebyte.console;
+package com.github.wnebyte.consolefx;
 
 import java.util.Collections;
 import java.util.List;
-import static com.github.wnebyte.console.util.StringUtils.normalizeString;
+import static com.github.wnebyte.consolefx.util.StringUtils.normalizeString;
 
 public class StyleSegment {
 
