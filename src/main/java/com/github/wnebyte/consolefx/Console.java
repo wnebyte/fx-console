@@ -114,7 +114,7 @@ public class Console extends BorderPane {
         this.scrollPane = new VirtualizedScrollPane<>(this.area);
         this.suppressMask = new SimpleBooleanProperty(true);
         this.buffer = new LinkedList<>();
-        this.history = new LinkedList<>();
+        this.history = new ArrayList<>();
         this.historyPointer = 0;
         this.out = new StandardPrinter();
         this.err = new ErrorPrinter();
@@ -172,10 +172,10 @@ public class Console extends BorderPane {
         // remove potential prefix
         text = removePrefix(text);
 
-        // if buffer has content
+        // if buffer is not empty
         if (bufferNonEmpty = (buffer.size() > 0)) {
             String bufferText = new String(toCharArray(buffer));
-            // replace masked chars with contents of buffer
+            // replace mask sequence with contents of buffer
             text = replaceSequence(text, bufferText, MASK);
             // clear buffer
             buffer.clear();
