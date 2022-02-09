@@ -17,29 +17,24 @@ public class ConsoleTest extends Application {
     @Override
     public void start(Stage stage) {
         Console console = new Console();
-        console.getStylesheets().add(getClass().getResource("/css/win.css").toExternalForm());
+        console.getStylesheets().add(getClass().getResource("/css/gitbash.css").toExternalForm());
         console.setCallback(s -> {
             new Thread(() -> {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 if (s.equals("clear")) {
                     console.clear();
                 }
                 else {
                     console.println("read: " + s);
                 }
-                console.ln();
+                console.println();
                 console.ready();
             }).start();
         });
         console.setPrefix(createPrefix());
-        console.println("com.github.wnebyte.console [Version 0.0.1]\n");
+        console.println("com.github.wnebyte.consolefx\n");
         console.ready();
         stage.setScene(new Scene(console, WIDTH, HEIGHT));
-        stage.setTitle("Terminal");
+        stage.setTitle("Console");
         stage.show();
     }
 
@@ -78,6 +73,15 @@ public class ConsoleTest extends Application {
 
     private StyleText createPrefix03() {
         return new StyleTextBuilder()
+                .build();
+    }
+
+    private StyleText createPrefix04() {
+        return new StyleTextBuilder()
+                .append("wne@MSI ", "green")
+                .append("MINGW64 ", "purple")
+                .append("~\n", "green")
+                .append("$ ", "green")
                 .build();
     }
 }

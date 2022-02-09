@@ -1,5 +1,6 @@
 package com.github.wnebyte.console.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -7,6 +8,11 @@ import java.util.ArrayList;
  * This class declares utility-methods for working with instances of {@link String}.
  */
 public final class StringUtils {
+
+    public static final List<String> LINE_SEPARATORS = Arrays.asList(
+            "\r\n",
+            "\n"
+    );
 
     /**
      * @param s the string.
@@ -17,23 +23,35 @@ public final class StringUtils {
         return (s == null) || (s.equals(""));
     }
 
-    public static boolean nonEmpty(final String s) {
+    public static boolean isNotEmpty(final String s) {
         return (s != null) && !(s.equals(""));
     }
 
     public static boolean containsLineSeparator(final String s) {
-        return (s != null) && (s.contains(System.lineSeparator()));
+        if (s == null) {
+            return false;
+        }
+        for (String ls : LINE_SEPARATORS) {
+            if (s.contains(ls)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
-     * Removes the occurrence of any <code>lineSeparator</code> characters from the specified string.
+     * Removes any occurrences of <code>"\r\n"</code> or <code>"\n"</code> from the specified <code>String</code>.
      * @param s the string.
      * @return the specified string not containing <code>"\r\n"</code> or <code>"\n"</code>.
      */
-    public static String removeLineSeparators(final String s) {
-        return (s != null) ?
-                s.replace(System.lineSeparator(), "").replace("\n", "")
-                : "";
+    public static String removeLineSeparators(String s) {
+        if (s == null) {
+            return "";
+        }
+        for (String ls : LINE_SEPARATORS) {
+            s = s.replace(ls, "");
+        }
+        return s;
     }
 
     /**
@@ -42,12 +60,17 @@ public final class StringUtils {
      * @return the result.
      */
     public static String normalizeString(final String s) {
-        return (s != null) ? s.replace("\r\n", "\n") : "";
+        if (s == null) {
+            return "";
+        }
+        return s.replace(LINE_SEPARATORS.get(0), LINE_SEPARATORS.get(1));
     }
 
     public static List<String> split(String s) {
         List<String> elements = new ArrayList<>();
-        if (s == null) { return elements; }
+        if (s == null) {
+            return elements;
+        }
         s = normalizeString(s);
         char[] arr = s.toCharArray();
         int start = 0;
@@ -69,12 +92,12 @@ public final class StringUtils {
         return elements;
     }
 
-    public static String replaceSequence(final String s, final String replacement, final char c) {
+    public static String replaceSequence(final String s, final String replacement, final char sequenceChar) {
         char[] arr = s.toCharArray();
         boolean match = false;
 
         for (int i = arr.length - 1; i >= 0; i--) {
-            if (arr[i] == c) {
+            if (arr[i] == sequenceChar) {
                 match = true;
             } else {
                 if (match) {
