@@ -1,5 +1,8 @@
 package com.github.wnebyte.consolefx;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
 import java.util.*;
 import java.util.function.Consumer;
 import java.time.Duration;
@@ -17,6 +20,9 @@ import org.fxmisc.richtext.StyleClassedTextArea;
 import org.fxmisc.richtext.model.PlainTextChange;
 import org.fxmisc.richtext.model.TwoDimensional;
 import org.fxmisc.flowless.VirtualizedScrollPane;
+
+import javax.security.auth.callback.Callback;
+
 import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
@@ -116,8 +122,8 @@ public class Console extends BorderPane {
         this.buffer = new LinkedList<>();
         this.history = new ArrayList<>();
         this.historyPointer = 0;
-        this.out = new StandardPrinter();
-        this.err = new ErrorPrinter();
+        this.out = new Out();
+        this.err = new Err();
         this.area.setWrapText(true);
         this.area.setEditable(true);
         this.scrollPane.setVbarPolicy(DEFAULT_VERT_SCROLL_BAR_POLICY);
@@ -155,9 +161,9 @@ public class Console extends BorderPane {
                 .subscribe(this::mask);
     }
 
-    private String removePrefix(String text) {
+    private String stripPrefix(String text) {
         if (prefix != null) {
-            String seg = prefix.getLastSegment();
+            String seg = prefix.getLastLine();
             if (text.startsWith(seg)) {
                 return text.substring(seg.length());
             }
@@ -166,39 +172,33 @@ public class Console extends BorderPane {
     }
 
     private void onEnterPressed(KeyEvent e) {
-        boolean bufferNonEmpty;
-        // get text
+        boolean hasContent;
         String text = area.getText(area.getCurrentParagraph());
-        // remove potential prefix
-        text = removePrefix(text);
+        text = stripPrefix(text);
 
-        // if buffer is not empty
-        if (bufferNonEmpty = (buffer.size() > 0)) {
+        // buffer is not empty
+        if (hasContent = (buffer.size() > 0)) {
             String bufferText = new String(toCharArray(buffer));
-            // replace mask sequence with contents of buffer
+            // replace last mask sequence with contents of buffer, and clear buffer
             text = replaceSequence(text, bufferText, MASK);
-            // clear buffer
             buffer.clear();
         }
 
         suppressMask.setValue(true);
         println();
 
-        if (!isNullOrEmpty(text)) {
-            // if text is non-null and non-empty
-            if (!bufferNonEmpty) {
-                // if buffer was empty add text to history
+        if (isNotEmpty(text)) {
+            // buffer is empty
+            if (!hasContent) {
                 history.add(text);
                 history.remove("");
                 history.add("");
                 historyPointer = history.size() - 1;
             }
             if (callback != null) {
-                // callback with the text
                 callback.accept(text);
             }
         } else {
-            // print prefix & unlock console
             ready();
         }
     }
@@ -489,13 +489,13 @@ public class Console extends BorderPane {
     }
 
     public String getText() {
-        return removePrefix(area.getText(area.getCurrentParagraph()));
+        return stripPrefix(area.getText(area.getCurrentParagraph()));
     }
 
     /**
      * Clears any text from this <code>Console</code>.
      */
-    public final void clear() {
+    public void clear() {
         synchronized (lock) {
             runSafe(area::clear);
         }
@@ -504,7 +504,7 @@ public class Console extends BorderPane {
     /**
      * Clears the contents of the history.
      */
-    public final void clearHistory() {
+    public void clearHistory() {
         history.clear();
         historyPointer = 0;
     }
@@ -512,14 +512,14 @@ public class Console extends BorderPane {
     /**
      * Locks this <code>Console</code>.
      */
-    public final void lock() {
+    public void lock() {
         runSafe(() -> area.setEditable(false));
     }
 
     /**
      * Unlocks this <code>Console</code>.
      */
-    public final void unlock() {
+    public void unlock() {
         runSafe(() -> area.setEditable(true));
     }
 
@@ -528,7 +528,7 @@ public class Console extends BorderPane {
      * @return <code>true</code> if it is locked,
      * otherwise <code>false</code>.
      */
-    public final boolean isLocked() {
+    public boolean isLocked() {
         return area.isEditable();
     }
 
@@ -536,7 +536,7 @@ public class Console extends BorderPane {
      * Set whether the displayed text should wrap or not.
      * @param value whether the text should wrap.
      */
-    public final void setWrapText(final boolean value) {
+    public void setWrapText(final boolean value) {
         runSafe(() -> area.setWrapText(value));
     }
 
@@ -545,7 +545,7 @@ public class Console extends BorderPane {
      * @return <code>true</code> if the text is set to wrap,
      * otherwise <code>false</code>.
      */
-    public final boolean isWrapText() {
+    public boolean isWrapText() {
         return area.isWrapText();
     }
 
@@ -553,14 +553,14 @@ public class Console extends BorderPane {
      * Set a <code>vBarPolicy</code> for the vertical <code>ScrollPane</code>.
      * @param vBarPolicy to be used.
      */
-    public final void setVbarPolicy(final ScrollPane.ScrollBarPolicy vBarPolicy) {
+    public void setVbarPolicy(final ScrollPane.ScrollBarPolicy vBarPolicy) {
         runSafe(() -> scrollPane.setVbarPolicy(vBarPolicy));
     }
 
     /**
      * @return the vBarPolicy for this console's vertical ScrollPane.
      */
-    public final ScrollPane.ScrollBarPolicy getVbarPolicy() {
+    public ScrollPane.ScrollBarPolicy getVbarPolicy() {
         return scrollPane.getVbarPolicy();
     }
 
@@ -569,14 +569,14 @@ public class Console extends BorderPane {
      *
      * @param hBarPolicy to be set.
      */
-    public final void setHBarPolicy(final ScrollPane.ScrollBarPolicy hBarPolicy) {
+    public void setHbarPolicy(final ScrollPane.ScrollBarPolicy hBarPolicy) {
         runSafe(() -> scrollPane.setHbarPolicy(hBarPolicy));
     }
 
     /**
      * @return returns the hBarPolicy for this console's ScrollPane.
      */
-    public final ScrollPane.ScrollBarPolicy getHbarPolicy() {
+    public ScrollPane.ScrollBarPolicy getHbarPolicy() {
         return scrollPane.getHbarPolicy();
     }
 
@@ -586,7 +586,7 @@ public class Console extends BorderPane {
      * @return the <code>ContextMenu</code> if one exists,
      * otherwise <code>null</code>.
      */
-    public final ContextMenu getContextMenu() {
+    public ContextMenu getContextMenu() {
         return area.getContextMenu();
     }
 
@@ -594,26 +594,26 @@ public class Console extends BorderPane {
      * Set a <code>ContextMenu</code> to be used by this <code>Console</code>.
      * @param contextMenu to be used.
      */
-    public final void setContextMenu(final ContextMenu contextMenu) {
+    public void setContextMenu(final ContextMenu contextMenu) {
         area.setContextMenu(contextMenu);
     }
 
     /**
-     * Set a callback to be invoked when this <code>Console</code> has new text appended to it.
+     * Specify a callback to be used when this <code>Console</code> has new text manually appended to it.
      * @param callback to be used.
      */
-    public final void setCallback(final Consumer<String> callback) {
+    public void setCallback(final Consumer<String> callback) {
         this.callback = callback;
     }
 
-    public final void setPrefix(final StyleText prefix) {
+    public void setPrefix(final StyleText prefix) {
         if ((prefix == null) || (prefix.getStyleSegments().isEmpty())) {
             throw new IllegalArgumentException(
                     "The prefix if specified must consist of at least one segment."
             );
         }
-        // make sure that the prefix ends with a whitespace character
-        this.prefix = (prefix.getLastSegment().endsWith(" ")) ?
+        // make sure the prefix ends with a whitespace character
+        this.prefix = (prefix.getLastLine().endsWith(" ")) ?
                 prefix : new StyleTextBuilder(prefix).whitespace().build();
     }
 
@@ -626,7 +626,7 @@ public class Console extends BorderPane {
             return 0;
         } else {
             String text = area.getText(area.getCurrentParagraph());
-            String seg = prefix.getLastSegment();
+            String seg = prefix.getLastLine();
             return text.startsWith(seg) ? seg.length() : 0;
         }
     }
@@ -638,10 +638,18 @@ public class Console extends BorderPane {
         area.scrollYBy(Double.MAX_VALUE);
     }
 
+    public class In extends InputStream {
+
+        @Override
+        public int read() throws IOException {
+            return 0;
+        }
+    }
+    
     /*
     has to override all print methods.
      */
-    public class StandardPrinter extends Printer {
+    public class Out extends Printer {
 
         @Override
         public void print(boolean b) {
@@ -811,7 +819,7 @@ public class Console extends BorderPane {
         }
     }
 
-    public class ErrorPrinter extends Printer {
+    public class Err extends Printer {
 
         @Override
         public void print(boolean b) {

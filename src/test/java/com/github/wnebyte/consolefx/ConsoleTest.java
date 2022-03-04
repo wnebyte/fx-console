@@ -1,7 +1,9 @@
 package com.github.wnebyte.consolefx;
 
+import com.github.lalyos.jfiglet.FigletFont;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
 import javafx.stage.Stage;
 
 import java.util.concurrent.*;
@@ -35,7 +37,9 @@ public class ConsoleTest extends Application {
             console.ready();
         }));
         console.setPrefix(createPrefix());
-        console.println("com.github.wnebyte.consolefx\n");
+        console.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        console.println(FigletFont.convertOneLine("consolefx"));
+        console.println();
         console.ready();
         stage.setScene(new Scene(console, WIDTH, HEIGHT));
         stage.setTitle("Console");

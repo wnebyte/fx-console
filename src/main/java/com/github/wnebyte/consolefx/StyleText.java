@@ -8,11 +8,11 @@ public class StyleText {
 
     private final List<StyleSegment> styleSegments;
 
-    private final String[] segments;
+    private final String[] lines;
 
     public StyleText(List<StyleSegment> styleSegments) {
         this.styleSegments = styleSegments;
-        this.segments = join().split("\n");
+        this.lines = join().split("\n");
     }
 
     public List<StyleSegment> getStyleSegments() {
@@ -35,15 +35,15 @@ public class StyleText {
         return styleSegments.stream().map(StyleSegment::getText).collect(Collectors.joining());
     }
 
-    public String getFirstSegment() {
-        return segments[0];
+    public String getFirstLine() {
+        return lines[0];
     }
 
-    public String getLastSegment() {
-        return segments[segments.length - 1];
+    public String getLastLine() {
+        return lines[lines.length - 1];
     }
 
-    public String getSegment(int index) {
-        return segments[index];
+    public String getLine(int index) {
+        return lines[index];
     }
 }

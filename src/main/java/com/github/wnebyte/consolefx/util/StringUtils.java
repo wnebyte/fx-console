@@ -9,10 +9,7 @@ import java.util.ArrayList;
  */
 public final class StringUtils {
 
-    public static final List<String> LINE_SEPARATORS = Arrays.asList(
-            "\r\n",
-            "\n"
-    );
+    public static final List<String> LINE_SEPARATORS = Arrays.asList("\r\n", "\n");
 
     /**
      * @param s the string.

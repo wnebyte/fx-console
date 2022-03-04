@@ -57,6 +57,7 @@ repositories {
 dependencies {
     implementation group: 'org.fxmisc.richtext', name: 'richtextfx', version: '0.10.1'
     testImplementation group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'com.github.lalyos', name: 'jfiglet', version: '0.0.3'
 }
 
 jar{
