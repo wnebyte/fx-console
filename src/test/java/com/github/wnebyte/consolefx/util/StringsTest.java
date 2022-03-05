@@ -1,30 +1,22 @@
 package com.github.wnebyte.consolefx.util;
 
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-import java.util.Arrays;
-import java.util.List;
-import static com.github.wnebyte.consolefx.util.StringUtils.*;
+import static com.github.wnebyte.consolefx.util.Strings.replaceSequence;
+import static com.github.wnebyte.consolefx.util.Strings.split;
 
-public class UtilsTest {
-
-    @Test
-    public void test02() {
-        String s = "test|hej";
-        String substring = s.substring(0, s.indexOf("|"));
-        System.out.println(substring);
-    }
+public class StringsTest {
 
     @Test
-    public void test03() {
+    public void testSplit00() {
         String s = "\nparagraph1\nparagraph2\nparagraph3\n";
         List<String> list = split(s);
-        System.out.println(Arrays.toString(list.toArray()) + "\n" + list.size());
         Assert.assertEquals(7, list.size());
     }
 
     @Test
-    public void test04() {
+    public void testSplit01() {
         String s = "\n\nparagraph1";
         List<String> list = split(s);
         Assert.assertEquals(3, list.size());
@@ -52,7 +44,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void test05() {
+    public void testReplaceSequence00() {
         String input = "wne *****";
         String s = replaceSequence(input, "mypassword", '*');
         Assert.assertEquals("wne mypassword", s);

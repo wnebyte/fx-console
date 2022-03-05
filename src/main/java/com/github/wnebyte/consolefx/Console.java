@@ -1,8 +1,5 @@
 package com.github.wnebyte.consolefx;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
 import java.util.*;
 import java.util.function.Consumer;
 import java.time.Duration;
@@ -20,16 +17,13 @@ import org.fxmisc.richtext.StyleClassedTextArea;
 import org.fxmisc.richtext.model.PlainTextChange;
 import org.fxmisc.richtext.model.TwoDimensional;
 import org.fxmisc.flowless.VirtualizedScrollPane;
-
-import javax.security.auth.callback.Callback;
-
 import static javafx.scene.input.KeyCode.*;
 import static javafx.scene.input.KeyCode.DOWN;
 import static org.fxmisc.wellbehaved.event.EventPattern.*;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
-import static com.github.wnebyte.consolefx.util.StringUtils.*;
+import static com.github.wnebyte.consolefx.util.Strings.*;
 import static com.github.wnebyte.consolefx.util.GUIUtils.runSafe;
-import static com.github.wnebyte.consolefx.util.CollectionUtils.toCharArray;
+import static com.github.wnebyte.consolefx.util.Collections.toCharArray;
 
 /**
  * This class represents a Java-FX Console that is styleable using CSS.
@@ -38,14 +32,14 @@ public class Console extends BorderPane {
 
     /*
     ###########################
-    #      STATIC METHODS     #
+    #     UTILITY METHODS     #
     ###########################
     */
 
     public static <T extends javafx.event.Event, U extends T> void addConsumableInputMap(
-            final Node node,
-            final EventPattern<? super T, ? extends U> eventPattern,
-            final Consumer<? super U> action
+            Node node,
+            EventPattern<? super T, ? extends U> eventPattern,
+            Consumer<? super U> action
     ) {
         if (node == null) {
             return;
@@ -54,8 +48,8 @@ public class Console extends BorderPane {
     }
 
     public static <T extends javafx.event.Event, U extends T> void addIgnorableInputMap(
-            final Node node,
-            final EventPattern<? super T, ? extends U> eventPattern
+            Node node,
+            EventPattern<? super T, ? extends U> eventPattern
     ) {
         if (node == null) {
             return;
@@ -76,9 +70,6 @@ public class Console extends BorderPane {
     private static final char MASK = '*';
 
     private static final String MASK_SEQUENCE = ":msk";
-
-    private static final ScrollPane.ScrollBarPolicy DEFAULT_VERT_SCROLL_BAR_POLICY
-            = ScrollPane.ScrollBarPolicy.ALWAYS;
 
     /*
     ###########################
@@ -126,7 +117,7 @@ public class Console extends BorderPane {
         this.err = new Err();
         this.area.setWrapText(true);
         this.area.setEditable(true);
-        this.scrollPane.setVbarPolicy(DEFAULT_VERT_SCROLL_BAR_POLICY);
+        this.scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         super.setCenter(this.scrollPane);
         build();
     }
@@ -163,9 +154,9 @@ public class Console extends BorderPane {
 
     private String stripPrefix(String text) {
         if (prefix != null) {
-            String seg = prefix.getLastLine();
-            if (text.startsWith(seg)) {
-                return text.substring(seg.length());
+            String line = prefix.getLastLine();
+            if (text.startsWith(line)) {
+                return text.substring(line.length());
             }
         }
         return text;
@@ -179,7 +170,7 @@ public class Console extends BorderPane {
         // buffer is not empty
         if (hasContent = (buffer.size() > 0)) {
             String bufferText = new String(toCharArray(buffer));
-            // replace last mask sequence with contents of buffer, and clear buffer
+            // replace mask sequence with contents of buffer, and clear buffer
             text = replaceSequence(text, bufferText, MASK);
             buffer.clear();
         }
@@ -188,8 +179,10 @@ public class Console extends BorderPane {
         println();
 
         if (isNotEmpty(text)) {
-            // buffer is empty
+            // has text
             if (!hasContent) {
+                // buffer is empty
+                // Todo: clean up
                 history.add(text);
                 history.remove("");
                 history.add("");
@@ -291,66 +284,14 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Scans the tail of the text from the current paragraph for {@link Console#MASK_SEQUENCE} occurrence,
-     * if found deletes the occurrence and sets the class scoped <code>noMask</code> property to <code>false</code>
-     * to init masking.
-     */
-    private void scan(List<PlainTextChange> plainTextChanges) {
-        String text = area.getText(area.getCurrentParagraph());
-        int len = text.length();
-        if (text.endsWith(MASK_SEQUENCE)) {
-            suppressMask.setValue(false);
-            area.deleteText(
-                    area.getCurrentParagraph(),
-                    Math.max(getMinMinor(), len - MASK_SEQUENCE.length()),
-                    area.getCurrentParagraph(),
-                    len
-            );
-        }
-    }
-
-    /**
-     * Replaces any appended text with the {@linkplain Console#MASK} char,
-     * and pushes the appended text onto the class scoped buffer.
-     */
-    private void mask(List<PlainTextChange> plainTextChanges) {
-        for (PlainTextChange ptc : plainTextChanges) {
-            String inserted = ptc.getInserted();
-            String removed = ptc.getRemoved();
-
-            if ((inserted.length() != 0) && (removed.length() != 0)) {
-                continue;
-            }
-            if (inserted.length() > 0) {
-                char[] arr = inserted.toCharArray();
-                for (char c : arr) {
-                    buffer.add(c);
-                }
-                area.replaceText(
-                        ptc.getPosition(),
-                        ptc.getInsertionEnd(),
-                        String.valueOf(MASK)
-                );
-            }
-            if (removed.length() > 0) {
-                if (!(buffer.isEmpty())) {
-                    for (int i = 0; i < removed.length(); i++) {
-                        buffer.removeLast();
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Prints the specified <code>text</code> at the current caret position.
      * @param text to be print.
      */
-    public void print(final String text) {
+    public void print(String text) {
         synchronized (lock) {
             runSafe(() -> {
                 split(text).forEach(out -> {
-                    if (out.equals("\n")) {
+                    if (out.equals(LINE_SEPARATOR_UNIX)) {
                         println();
                     } else {
                         area.appendText(out);
@@ -366,15 +307,14 @@ public class Console extends BorderPane {
     /**
      * Prints the specified <code>text</code> with the specified <code>styleClasses</code>
      * at the current caret position.
-     *
      * @param text         to be print.
      * @param styleClasses to be applied to the text.
      */
-    public void print(final String text, final String... styleClasses) {
+    public void print(String text, String... styleClasses) {
         synchronized (lock) {
             runSafe(() -> {
                 split(text).forEach(out -> {
-                    if (out.equals("\n")) {
+                    if (out.equals(LINE_SEPARATOR_UNIX)) {
                         println();
                     } else {
                         area.appendText(out);
@@ -391,7 +331,7 @@ public class Console extends BorderPane {
      * Prints the specified <code>StyleText</code> at the current caret position.
      * @param styleText to be print.
      */
-    public void print(final StyleText styleText) {
+    public void print(StyleText styleText) {
         synchronized (lock) {
             runSafe(() -> {
                 styleText.getStyleSegments().forEach(out -> {
@@ -405,7 +345,7 @@ public class Console extends BorderPane {
      * Prints the specified <code>text</code> and a new line at the current caret position.
      * @param text to be print.
      */
-    public void println(final String text) {
+    public void println(String text) {
         synchronized (lock) {
             runSafe(() -> {
                 print(text);
@@ -420,7 +360,7 @@ public class Console extends BorderPane {
      * @param text         to be print.
      * @param styleClasses to be applied to the text.
      */
-    public void println(final String text, final String... styleClasses) {
+    public void println(String text, String... styleClasses) {
         synchronized (lock) {
             runSafe(() -> {
                 print(text, styleClasses);
@@ -433,7 +373,7 @@ public class Console extends BorderPane {
      * Prints the specified <code>StyleText</code> and a new line at the current caret position.
      * @param styleText to be print.
      */
-    public void println(final StyleText styleText) {
+    public void println(StyleText styleText) {
         synchronized (lock) {
             runSafe(() -> {
                 print(styleText);
@@ -447,7 +387,7 @@ public class Console extends BorderPane {
      * at the current caret position.
      * @param text to be print.
      */
-    public void printerr(final String text) {
+    public void printerr(String text) {
         synchronized (lock) {
             runSafe(() -> {
                 print(text, Console.ERROR_STYLE_CLASSES);
@@ -486,10 +426,6 @@ public class Console extends BorderPane {
                 unlock();
             });
         }
-    }
-
-    public String getText() {
-        return stripPrefix(area.getText(area.getCurrentParagraph()));
     }
 
     /**
@@ -533,15 +469,15 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Set whether the displayed text should wrap or not.
-     * @param value whether the text should wrap.
+     * Specify whether text should wrap or not.
+     * @param value a boolean.
      */
-    public void setWrapText(final boolean value) {
+    public void setWrapText(boolean value) {
         runSafe(() -> area.setWrapText(value));
     }
 
     /**
-     * Returns whether the displayed text is set to wrap or not,
+     * Returns whether this <code>Console</code>'s text is set to wrap or not.
      * @return <code>true</code> if the text is set to wrap,
      * otherwise <code>false</code>.
      */
@@ -550,40 +486,37 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Set a <code>vBarPolicy</code> for the vertical <code>ScrollPane</code>.
-     * @param vBarPolicy to be used.
+     * Specify a vertical <code>ScrollBarPolicy</code> for this <code>Console</code>.
+     * @param vBarPolicy a vertical ScrollBarPolicy.
      */
-    public void setVbarPolicy(final ScrollPane.ScrollBarPolicy vBarPolicy) {
+    public void setVbarPolicy(ScrollPane.ScrollBarPolicy vBarPolicy) {
         runSafe(() -> scrollPane.setVbarPolicy(vBarPolicy));
     }
 
     /**
-     * @return the vBarPolicy for this console's vertical ScrollPane.
+     * @return returns the vertical <code>ScrollBarPolicy</code> used by this <code>Console</code>.
      */
     public ScrollPane.ScrollBarPolicy getVbarPolicy() {
         return scrollPane.getVbarPolicy();
     }
 
     /**
-     * Sets the hBarPolicy for this console's horizontal ScrollPane.
-     *
-     * @param hBarPolicy to be set.
+     * Specify a horizontal <code>ScrollBarPolicy</code> for this <code>Console</code>.
+     * @param hBarPolicy a horizontal ScrollBarPolicy.
      */
-    public void setHbarPolicy(final ScrollPane.ScrollBarPolicy hBarPolicy) {
+    public void setHbarPolicy(ScrollPane.ScrollBarPolicy hBarPolicy) {
         runSafe(() -> scrollPane.setHbarPolicy(hBarPolicy));
     }
 
     /**
-     * @return returns the hBarPolicy for this console's ScrollPane.
+     * @return returns the horizontal <code>ScrollBarPolicy</code> used by this <code>Console</code>.
      */
     public ScrollPane.ScrollBarPolicy getHbarPolicy() {
         return scrollPane.getHbarPolicy();
     }
 
-
     /**
-     * Returns the <code>ContextMenu</code> of this <code>Console</code>.
-     * @return the <code>ContextMenu</code> if one exists,
+     * @return the context menu if one exists,
      * otherwise <code>null</code>.
      */
     public ContextMenu getContextMenu() {
@@ -591,29 +524,29 @@ public class Console extends BorderPane {
     }
 
     /**
-     * Set a <code>ContextMenu</code> to be used by this <code>Console</code>.
-     * @param contextMenu to be used.
+     * Specify a context menu to be used by this <code>Console</code>.
+     * @param contextMenu a context menu.
      */
-    public void setContextMenu(final ContextMenu contextMenu) {
+    public void setContextMenu(ContextMenu contextMenu) {
         area.setContextMenu(contextMenu);
     }
 
     /**
-     * Specify a callback to be used when this <code>Console</code> has new text manually appended to it.
-     * @param callback to be used.
+     * Specify a <code>Consumer</code> to be called when this <code>Console</code> has new text manually appended to it.
+     * @param callback a Consumer.
      */
-    public void setCallback(final Consumer<String> callback) {
+    public void setCallback(Consumer<String> callback) {
         this.callback = callback;
     }
 
-    public void setPrefix(final StyleText prefix) {
-        if ((prefix == null) || (prefix.getStyleSegments().isEmpty())) {
+    public void setPrefix(StyleText prefix) {
+        if (prefix == null || prefix.getStyleSegments().isEmpty()) {
             throw new IllegalArgumentException(
-                    "The prefix if specified must consist of at least one segment."
+                    "The prefix if specified must contain at least one segment."
             );
         }
         // make sure the prefix ends with a whitespace character
-        this.prefix = (prefix.getLastLine().endsWith(" ")) ?
+        this.prefix = (prefix.getLastLine().endsWith(WHITESPACE)) ?
                 prefix : new StyleTextBuilder(prefix).whitespace().build();
     }
 
@@ -626,8 +559,60 @@ public class Console extends BorderPane {
             return 0;
         } else {
             String text = area.getText(area.getCurrentParagraph());
-            String seg = prefix.getLastLine();
-            return text.startsWith(seg) ? seg.length() : 0;
+            String line = prefix.getLastLine();
+            return text.startsWith(line) ? line.length() : 0;
+        }
+    }
+
+    /**
+     * Scans the tail of the text from the current paragraph for {@link Console#MASK_SEQUENCE} occurrence,
+     * if found deletes the occurrence and sets the class scoped <code>noMask</code> property to <code>false</code>
+     * to init masking.
+     */
+    private void scan(List<PlainTextChange> changes) {
+        String text = area.getText(area.getCurrentParagraph());
+        int len = text.length();
+        if (text.endsWith(MASK_SEQUENCE)) {
+            suppressMask.setValue(false);
+            area.deleteText(
+                    area.getCurrentParagraph(),
+                    Math.max(getMinMinor(), len - MASK_SEQUENCE.length()),
+                    area.getCurrentParagraph(),
+                    len
+            );
+        }
+    }
+
+    /**
+     * Replaces any appended text with the {@linkplain Console#MASK} char,
+     * and pushes the appended text onto {@link Console#buffer}.
+     */
+    private void mask(List<PlainTextChange> changes) {
+        for (PlainTextChange change : changes) {
+            String inserted = change.getInserted();
+            String removed = change.getRemoved();
+
+            if ((inserted.length() != 0) && (removed.length() != 0)) {
+                continue;
+            }
+            if (inserted.length() > 0) {
+                char[] arr = inserted.toCharArray();
+                for (char c : arr) {
+                    buffer.add(c);
+                }
+                area.replaceText(
+                        change.getPosition(),
+                        change.getInsertionEnd(),
+                        String.valueOf(MASK)
+                );
+            }
+            if (removed.length() > 0) {
+                if (!buffer.isEmpty()) {
+                    for (int i = 0; i < removed.length(); i++) {
+                        buffer.removeLast();
+                    }
+                }
+            }
         }
     }
 
@@ -638,17 +623,6 @@ public class Console extends BorderPane {
         area.scrollYBy(Double.MAX_VALUE);
     }
 
-    public class In extends InputStream {
-
-        @Override
-        public int read() throws IOException {
-            return 0;
-        }
-    }
-    
-    /*
-    has to override all print methods.
-     */
     public class Out extends Printer {
 
         @Override

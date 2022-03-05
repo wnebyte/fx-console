@@ -14,7 +14,7 @@ javafx-library
 ## About
 
 This project contains the <code>Console</code> class, which is a javafx class that is made to look and behave like a standard console.<br> 
-Both the console itself, and any appended text can be individually styled using css.
+Both the console itself, and any text appended to it can be individually styled using css.
 
 ## Sample
 
@@ -52,7 +52,8 @@ This sample demonstrates how to set the <code>Console</code>'s optional prefix.<
     );
 
 Each appended <code>StyleTextSegment</code> consists of some text, and a Collection of styleClasses 
-to be applied or added to the text.
+to be applied to the text. Each styleClass that is referenced has to be defined in an external css file for the style 
+to be applied. 
 
     ...
     console.ready();
