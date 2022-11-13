@@ -1,27 +1,24 @@
 # fx-console
 
-javafx-library
+A javafx library that can be used to build a "pretty console".
 
 ## Table of Contents
 
 - [About](#about)
 - [Sample](#sample)
 - [Images](#images)
-- [Build](#build)
-- [Documentation](#documentation)
-- [Licence](#licence)
 
 ## About
 
-This project contains the <code>Console</code> class, which is a javafx class that is made to look and behave like a standard console.<br> 
-Both the console itself, and any text appended to it can be individually styled using css.
+This javafx project contains a css-styleable <code>Console</code> class.
+Both the console itself, and any appended text can be styled using css.
 
 ## Sample
 
-### #1
+### 1: Setup
 
-This sample demonstrates the creation and initialization of a <code>Console</code> that has no styles applied, 
-no prefix, and which simply echoes any and all input.
+This sample demonstrates how to create and initialize a console that has no styles applied, 
+no prefix, and which simply echoes any input given to it.
 
     class Sample extends Application {
         public void start(Stage stage) {
@@ -34,13 +31,14 @@ no prefix, and which simply echoes any and all input.
         }
     }
     
-### #2
+### 2: Prefix
 
-This sample demonstrates how to set the <code>Console</code>'s optional prefix.<br>
+This sample demonstrates how to apply a stylesheet to a console and how to set the console's optional prefix property.<br>
 
     ...
-    console.getStylesheets().add(getClass().getResource("<filepath>.css").toExternalForm());
-    console.setPrefix(new StyleTextBuilder()
+    String path = getClass().getResource("stylesheet.css").toExternalForm();
+    console.getStylesheets().add(path);
+    StyleText prefix = new StyleTextBuilder()
             .append("wne@MSI", "green")
             .whitespace()
             .append("MINGW64", "purple")
@@ -49,16 +47,16 @@ This sample demonstrates how to set the <code>Console</code>'s optional prefix.<
             .ln()
             .append("$", "text")
             .build()
-    );
+    console.setPrefix(prefix);
 
-Each appended <code>StyleTextSegment</code> consists of some text, and a Collection of styleClasses 
-to be applied to the text. Each styleClass that is referenced has to be defined in an external css file for the style 
-to be applied. 
+Each individual <code>StyleTextSegment</code> consists of some text and a Collection of style classes 
+to be applied to said text. <br>
+Each style class that is referenced from a StyleTextSegment has to be defined in an external stylesheet.
 
     ...
     console.ready();
 
-Unlocks (if currently locked) the <code>Console</code> and appends its optional prefix.
+Unlocks (if currently locked) the Console and appends its optional prefix.
  
 ## Images
 
@@ -69,9 +67,3 @@ Unlocks (if currently locked) the <code>Console</code> and appends its optional 
 ### /css/win.css
 
 ![image2](images/image2.png)
-
-## Build
-
-## Documentation
-
-## Licence
